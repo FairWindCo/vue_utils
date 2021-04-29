@@ -1,0 +1,7 @@
+.idea/
+/build/
+/dist/
+/venv/
+/vue_utils.egg-info/
+__pycache__
+*.pyc

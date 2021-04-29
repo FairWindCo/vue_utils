@@ -1,0 +1,2 @@
+include /vue_utils/templates/vue_utils/*.html
+include /vue_utils/static/vue_utils/*
