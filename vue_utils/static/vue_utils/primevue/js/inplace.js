@@ -7,6 +7,7 @@ this.primevue.inplace = (function (Button, vue) {
     var Button__default = /*#__PURE__*/_interopDefaultLegacy(Button);
 
     var script = {
+        name: 'Inplace',
         emits: ['open', 'close', 'update:active'],
         props: {
             closable: {

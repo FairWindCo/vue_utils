@@ -7,6 +7,7 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
+        name: 'GalleriaItem',
         emits: ['start-slideshow', 'stop-slideshow', 'update:activeIndex'],
         props: {
             circular: {
@@ -235,6 +236,7 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
     script.render = render;
 
     var script$1 = {
+        name: 'GalleriaThumbnails',
         emits: ['stop-slideshow', 'update:activeIndex'],
         props: {
             containerId: {
@@ -745,6 +747,7 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
     };
 
     var script$3 = {
+        name: 'GalleriaContent',
         inheritAttrs: false,
         interval: null,
         emits: ['activeitem-change', 'mask-hide'],
@@ -907,6 +910,7 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
     script$3.render = render$2;
 
     var script$4 = {
+        name: 'Galleria',
         inheritAttrs: false,
         emits: ['update:activeIndex', 'update:visible'],
         props: {
@@ -1024,21 +1028,25 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
                 utils.DomHandler.removeClass(document.body, 'p-overflow-hidden');
             }
 
-            this.container = null;
             this.mask = null;
+            if (this.container) {
+                utils.ZIndexUtils.clear(this.container);
+                this.container = null;
+            }
         },
         methods: {
             onBeforeEnter(el) {
-                el.style.zIndex = String(this.baseZIndex + utils.DomHandler.generateZIndex());
+                utils.ZIndexUtils.set('modal', el, this.baseZIndex || this.$primevue.config.zIndex.modal);
             },
-            onEnter() {
-                this.mask.style.zIndex = String(this.baseZIndex + utils.DomHandler.generateZIndex());
+            onEnter(el) {
+                this.mask.style.zIndex = String(parseInt(el.style.zIndex, 10) - 1);
                 utils.DomHandler.addClass(document.body, 'p-overflow-hidden');
             },
             onBeforeLeave() {
                 utils.DomHandler.addClass(this.mask, 'p-galleria-mask-leave');
             },
-            onAfterLeave() {
+            onAfterLeave(el) {
+                utils.ZIndexUtils.clear(el);
                 this.containerVisible = false;
                 utils.DomHandler.removeClass(document.body, 'p-overflow-hidden');
             },
@@ -1059,7 +1067,10 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
         },
         computed: {
             maskContentClass() {
-                return ['p-galleria-mask p-component-overlay', this.maskClass];
+                return ['p-galleria-mask p-component-overlay', this.maskClass, {
+                    'p-input-filled': this.$primevue.config.inputStyle === 'filled',
+                    'p-ripple-disabled': this.$primevue.config.ripple === false
+                }];
             }
         },
         components: {
@@ -1070,41 +1081,46 @@ this.primevue.galleria = (function (utils, Ripple, vue) {
     function render$3(_ctx, _cache, $props, $setup, $data, $options) {
       const _component_GalleriaContent = vue.resolveComponent("GalleriaContent");
 
-      return ($props.fullScreen && $data.containerVisible)
-        ? (vue.openBlock(), vue.createBlock("div", {
+      return ($props.fullScreen)
+        ? (vue.openBlock(), vue.createBlock(vue.Teleport, {
             key: 0,
-            ref: $options.maskRef,
-            class: $options.maskContentClass
+            to: "body"
           }, [
-            vue.createVNode(vue.Transition, {
-              name: "p-galleria",
-              onBeforeEnter: $options.onBeforeEnter,
-              onEnter: $options.onEnter,
-              onBeforeLeave: $options.onBeforeLeave,
-              onAfterLeave: $options.onAfterLeave,
-              appear: ""
-            }, {
-              default: vue.withCtx(() => [
-                ($props.visible)
-                  ? (vue.openBlock(), vue.createBlock(_component_GalleriaContent, vue.mergeProps({
-                      key: 0,
-                      ref: $options.containerRef
-                    }, _ctx.$props, {
-                      onMaskHide: $options.maskHide,
-                      templates: _ctx.$slots,
-                      onActiveitemChange: $options.onActiveItemChange
-                    }), null, 16, ["onMaskHide", "templates", "onActiveitemChange"]))
-                  : vue.createCommentVNode("", true)
-              ]),
-              _: 1
-            }, 8, ["onBeforeEnter", "onEnter", "onBeforeLeave", "onAfterLeave"])
-          ], 2))
-        : (!$props.fullScreen)
-          ? (vue.openBlock(), vue.createBlock(_component_GalleriaContent, vue.mergeProps({ key: 1 }, _ctx.$props, {
-              templates: _ctx.$slots,
-              onActiveitemChange: $options.onActiveItemChange
-            }), null, 16, ["templates", "onActiveitemChange"]))
-          : vue.createCommentVNode("", true)
+            ($data.containerVisible)
+              ? (vue.openBlock(), vue.createBlock("div", {
+                  key: 0,
+                  ref: $options.maskRef,
+                  class: $options.maskContentClass
+                }, [
+                  vue.createVNode(vue.Transition, {
+                    name: "p-galleria",
+                    onBeforeEnter: $options.onBeforeEnter,
+                    onEnter: $options.onEnter,
+                    onBeforeLeave: $options.onBeforeLeave,
+                    onAfterLeave: $options.onAfterLeave,
+                    appear: ""
+                  }, {
+                    default: vue.withCtx(() => [
+                      ($props.visible)
+                        ? (vue.openBlock(), vue.createBlock(_component_GalleriaContent, vue.mergeProps({
+                            key: 0,
+                            ref: $options.containerRef
+                          }, _ctx.$props, {
+                            onMaskHide: $options.maskHide,
+                            templates: _ctx.$slots,
+                            onActiveitemChange: $options.onActiveItemChange
+                          }), null, 16, ["onMaskHide", "templates", "onActiveitemChange"]))
+                        : vue.createCommentVNode("", true)
+                    ]),
+                    _: 1
+                  }, 8, ["onBeforeEnter", "onEnter", "onBeforeLeave", "onAfterLeave"])
+                ], 2))
+              : vue.createCommentVNode("", true)
+          ]))
+        : (vue.openBlock(), vue.createBlock(_component_GalleriaContent, vue.mergeProps({ key: 1 }, _ctx.$props, {
+            templates: _ctx.$slots,
+            onActiveitemChange: $options.onActiveItemChange
+          }), null, 16, ["templates", "onActiveitemChange"]))
     }
 
     function styleInject(css, ref) {

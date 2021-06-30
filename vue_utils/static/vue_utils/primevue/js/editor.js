@@ -7,6 +7,7 @@ this.primevue.editor = (function (Quill, vue) {
     var Quill__default = /*#__PURE__*/_interopDefaultLegacy(Quill);
 
     var script = {
+        name: 'Editor',
         emits: ['update:modelValue', 'text-change'],
         props: {
             modelValue: String,
@@ -49,7 +50,8 @@ this.primevue.editor = (function (Quill, vue) {
                         htmlValue: html,
                         textValue: text,
                         delta: delta,
-                        source: source
+                        source: source,
+                        instance: this.quill
                     });
                 }
             });

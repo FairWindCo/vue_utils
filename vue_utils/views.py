@@ -2,9 +2,9 @@ from typing import Iterable
 
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
+from django.utils.translation import gettext as lang
 # Create your views here.
 from django.views.generic import ListView
-from django.utils.translation import gettext as _
 
 from vue_utils.utils import form_filter_dict, get_from_container, get_from_request, \
     my_serializer
@@ -73,9 +73,9 @@ class FilterListView(ListView):
             filter_def, self.filter_form_values = form_filter_dict(self.last_request, self.filters_fields,
                                                                    self.default_filter_action)
             self.paginate_by, _ = get_from_request(self.last_request, self.page_row_request_field,
-                                                self.user_defined_paging)
+                                                   self.user_defined_paging)
             self.ordering, _ = get_from_request(self.last_request, self.sort_request_field,
-                                             self.user_defined_sort)
+                                                self.user_defined_sort)
 
             if filter_def:
                 # print(filter_def, self.filter_form_values)
@@ -97,8 +97,9 @@ class FilterListView(ListView):
         return super(FilterListView, self).get(request, *args, *kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.last_request = request
-        return super(FilterListView, self).get(request, *args, *kwargs)
+        # self.last_request = request
+        # return super(FilterListView, self).get(request, *args, *kwargs)
+        return self.get(request, *args, **kwargs)
 
 
 class FilterAjaxListView(FilterListView):
@@ -130,7 +131,7 @@ class FilterAjaxListView(FilterListView):
             else:
                 is_empty = not self.object_list
             if is_empty:
-                raise Http404(_('Empty list and “%(class_name)s.allow_empty” is False.') % {
+                raise Http404(lang('Empty list and “%(class_name)s.allow_empty” is False.') % {
                     'class_name': self.__class__.__name__,
                 })
         serializer = my_serializer

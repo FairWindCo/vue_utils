@@ -8,6 +8,7 @@ this.primevue.inputnumber = (function (InputText, Button, vue) {
     var Button__default = /*#__PURE__*/_interopDefaultLegacy(Button);
 
     var script = {
+        name: 'InputNumber',
         inheritAttrs: false,
         emits: ['update:modelValue', 'input'],
         props: {
@@ -293,10 +294,10 @@ this.primevue.inputnumber = (function (InputText, Button, vue) {
                     let step = this.step * dir;
                     let currentValue = this.parseValue(this.$refs.input.$el.value) || 0;
                     let newValue = this.validateValue(currentValue + step);
-        
+
                     this.updateInput(newValue, null, 'spin');
                     this.updateModel(event, newValue);
-        
+
                     this.handleOnInput(event, currentValue, newValue);
                 }
             },

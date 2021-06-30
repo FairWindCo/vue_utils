@@ -1,7 +1,7 @@
-import collections
+import glob
 import glob
 import os
-from typing import Iterable, Dict, Tuple, List, Any, Union
+from typing import Iterable, Dict, Any
 
 from PIL import Image
 from django.core import serializers
@@ -9,7 +9,6 @@ from django.core.paginator import Paginator
 from django.db.models import Manager, QuerySet
 # Метод возвращает значение поля из запроса
 from django.http import Http404
-
 
 from vue_utils.access_object.detect_type import is_dict, is_not_string_sequence
 from vue_utils.access_object.transform import to_dict, standard_value_converter, get_from_container, dict_serializer
@@ -45,6 +44,7 @@ def get_from_request(request, request_param_name: str, default_value: Any = None
 
 def standard_serializer(list_object: Any):
     return serializers.serialize('json', list_object)
+
 
 def get_field_value(obj: any, field_name: str, default_val: any = None, can_call_function=True):
     if obj and field_name:
@@ -102,7 +102,8 @@ def my_serializer(serialized_obj, serialized_fields, exec_method: bool = True,
             current_val = get_field_value_ex(serialized_obj, field_name, None, exec_method)
 
             if current_val:
-                result[result_field] = standard_value_converter(current_val, convertor, ignore_error, default_dict, my_serializer)
+                result[result_field] = standard_value_converter(current_val, convertor, ignore_error, default_dict,
+                                                                my_serializer)
             else:
                 if not skip_none:
                     if convertor == 'bool':
@@ -117,6 +118,7 @@ def my_serializer(serialized_obj, serialized_fields, exec_method: bool = True,
         result = to_dict(serialized_obj)
     return result
 
+
 def process_paging(request, objects: Any, default_page_size: int = '25', serializer=dict_serializer):
     page_number, _ = get_from_request(request, 'page', 0)
     page_size, _ = get_from_request(request, 'per_page', default_page_size)
@@ -128,12 +130,6 @@ def process_paging(request, objects: Any, default_page_size: int = '25', seriali
         'per_page': page_size,
         'count': paginator.count
     }
-
-
-
-
-
-
 
 
 # Метод производит генерацию словаря для фильтрации из данных формы полученной GET или POST запросом
@@ -182,7 +178,7 @@ def form_filter_dict(request, filter_list, default_filter_action='icontains'):
 
             value, exist_in_request = get_from_request(request, form_field_name)
             if current_field and value:
-                if not isinstance(value, str) and isinstance(value, Dict) or isinstance(value, Iterable):
+                if not isinstance(value, str) and (isinstance(value, Dict) or isinstance(value, Iterable)):
                     current_value, filter_action = get_from_container(value, [
                         ('value', None),
                         ('action', filter_action)

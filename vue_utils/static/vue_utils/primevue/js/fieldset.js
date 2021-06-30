@@ -7,6 +7,7 @@ this.primevue.fieldset = (function (utils, Ripple, vue) {
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
+        name: 'Fieldset',
         emits: ['update:collapsed', 'toggle'],
         props: {
             legend: String,

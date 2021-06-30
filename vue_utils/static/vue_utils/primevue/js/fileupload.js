@@ -10,7 +10,8 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
-        emits: ['select', 'uploader', 'before-upload', 'progress', 'upload', 'error', 'before-send', 'clear'],
+        name: 'FileUpload',
+        emits: ['select', 'uploader', 'before-upload', 'progress', 'upload', 'error', 'before-send', 'clear', 'remove'],
         props: {
             name: {
                 type: String,
@@ -47,6 +48,10 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
             invalidFileSizeMessage: {
                 type: String,
                 default: '{0}: Invalid file size, file size should be smaller than {1}.'
+            },
+            invalidFileTypeMessage: {
+                type: String,
+                default: '{0}: Invalid file type, allowed file types: {1}.'
             },
             fileLimit: {
                 type: Number,
@@ -238,6 +243,11 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
                 return !!window['MSInputMethodContext'] && !!document['documentMode'];
             },
             validate(file) {
+                if (this.accept && !this.isFileTypeValid(file)) {
+                    this.messages.push(this.invalidFileTypeMessage.replace('{0}', file.name).replace('{1}', this.accept));
+                    return false;
+                }
+
                 if (this.maxFileSize && file.size > this.maxFileSize) {
                     this.messages.push(this.invalidFileSizeMessage.replace('{0}', file.name).replace('{1}', this.formatSize(this.maxFileSize)));
                     return false;
@@ -245,13 +255,38 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
 
                 return true;
             },
+            isFileTypeValid(file) {
+                let acceptableTypes = this.accept.split(',').map(type => type.trim());
+                for(let type of acceptableTypes) {
+                    let acceptable = this.isWildcard(type) ? this.getTypeClass(file.type) === this.getTypeClass(type)
+                        : file.type == type || this.getFileExtension(file).toLowerCase() === type.toLowerCase();
+
+                    if (acceptable) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+            getTypeClass(fileType) {
+                return fileType.substring(0, fileType.indexOf('/'));
+            },
+            isWildcard(fileType){
+                return fileType.indexOf('*') !== -1;
+            },
+            getFileExtension(file) {
+                return '.' + file.name.split('.').pop();
+            },
+            isImage(file) {
+                return /^image\//.test(file.type);
+            },
             onDragEnter(event) {
                 if (!this.disabled) {
                     event.stopPropagation();
                     event.preventDefault();
                 }
             },
-            onDragOver() {
+            onDragOver(event) {
                 if (!this.disabled) {
                     utils.DomHandler.addClass(this.$refs.content, 'p-fileupload-highlight');
                     event.stopPropagation();
@@ -263,7 +298,7 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
                     utils.DomHandler.removeClass(this.$refs.content, 'p-fileupload-highlight');
                 }
             },
-            onDrop() {
+            onDrop(event) {
                 if (!this.disabled) {
                     utils.DomHandler.removeClass(this.$refs.content, 'p-fileupload-highlight');
                     event.stopPropagation();
@@ -285,11 +320,12 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
             },
             remove(index) {
                 this.clearInputElement();
-                this.files.splice(index, 1);
+                let removedFile = this.files.splice(index, 1)[0];
                 this.files = [...this.files];
-            },
-            isImage(file) {
-                return /^image\//.test(file.type);
+                this.$emit('remove', {
+                    file: removedFile,
+                    files: this.files
+                });
             },
             clearInputElement() {
                 this.$refs.fileInput.value = '';
@@ -361,7 +397,7 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
                 return this.disabled || (this.fileLimit && this.fileLimit <= this.files.length + this.uploadedFileCount);
             },
             uploadDisabled() {
-                return this.disabled || !this.hasFiles;
+                return this.disabled || !this.hasFiles || (this.fileLimit && this.fileLimit < this.files.length);
             },
             cancelDisabled() {
                 return this.disabled || !this.hasFiles;
@@ -397,15 +433,16 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
       key: 1,
       class: "p-fileupload-files"
     };
-    const _hoisted_6 = {
+    const _hoisted_6 = { class: "p-fileupload-filename" };
+    const _hoisted_7 = {
       key: 2,
       class: "p-fileupload-empty"
     };
-    const _hoisted_7 = {
+    const _hoisted_8 = {
       key: 1,
       class: "p-fileupload p-fileupload-basic p-component"
     };
-    const _hoisted_8 = { class: "p-button-label" };
+    const _hoisted_9 = { class: "p-button-label" };
 
     function render(_ctx, _cache, $props, $setup, $data, $options) {
       const _component_FileUploadButton = vue.resolveComponent("FileUploadButton");
@@ -499,7 +536,7 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
                               }, null, 8, ["alt", "src", "width"]))
                             : vue.createCommentVNode("", true)
                         ]),
-                        vue.createVNode("div", null, vue.toDisplayString(file.name), 1),
+                        vue.createVNode("div", _hoisted_6, vue.toDisplayString(file.name), 1),
                         vue.createVNode("div", null, vue.toDisplayString($options.formatSize(file.size)), 1),
                         vue.createVNode("div", null, [
                           vue.createVNode(_component_FileUploadButton, {
@@ -513,14 +550,14 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
                   ]))
                 : vue.createCommentVNode("", true),
               (_ctx.$slots.empty && !$options.hasFiles)
-                ? (vue.openBlock(), vue.createBlock("div", _hoisted_6, [
+                ? (vue.openBlock(), vue.createBlock("div", _hoisted_7, [
                     vue.renderSlot(_ctx.$slots, "empty")
                   ]))
                 : vue.createCommentVNode("", true)
             ], 544)
           ]))
         : ($options.isBasic)
-          ? (vue.openBlock(), vue.createBlock("div", _hoisted_7, [
+          ? (vue.openBlock(), vue.createBlock("div", _hoisted_8, [
               (vue.openBlock(true), vue.createBlock(vue.Fragment, null, vue.renderList($data.messages, (msg) => {
                 return (vue.openBlock(), vue.createBlock(_component_FileUploadMessage, {
                   severity: "error",
@@ -541,7 +578,7 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
                 tabindex: "0"
               }, [
                 vue.createVNode("span", { class: $options.basicChooseButtonIconClass }, null, 2),
-                vue.createVNode("span", _hoisted_8, vue.toDisplayString($options.basicChooseButtonLabel), 1),
+                vue.createVNode("span", _hoisted_9, vue.toDisplayString($options.basicChooseButtonLabel), 1),
                 (!$options.hasFiles)
                   ? (vue.openBlock(), vue.createBlock("input", {
                       key: 0,
@@ -588,7 +625,7 @@ this.primevue.fileupload = (function (Button, ProgressBar, Message, utils, Rippl
       }
     }
 
-    var css_248z = "\n.p-fileupload-content {\n    position: relative;\n}\n.p-fileupload-row {\n    display: -webkit-box;\n    display: -ms-flexbox;\n    display: flex;\n    -webkit-box-align: center;\n        -ms-flex-align: center;\n            align-items: center;\n}\n.p-fileupload-row > div {\n    -webkit-box-flex: 1;\n        -ms-flex: 1 1 auto;\n            flex: 1 1 auto;\n    width: 25%;\n}\n.p-fileupload-row > div:last-child {\n    text-align: right;\n}\n.p-fileupload-content .p-progressbar {\n    width: 100%;\n    position: absolute;\n    top: 0;\n    left: 0;\n}\n.p-button.p-fileupload-choose {\n    position: relative;\n    overflow: hidden;\n}\n.p-button.p-fileupload-choose input[type=file] {\n    display: none;\n}\n.p-fileupload-choose.p-fileupload-choose-selected input[type=file] {\n    display: none;\n}\n.p-fluid .p-fileupload .p-button {\n    width: auto;\n}\n";
+    var css_248z = "\n.p-fileupload-content {\n    position: relative;\n}\n.p-fileupload-row {\n    display: -webkit-box;\n    display: -ms-flexbox;\n    display: flex;\n    -webkit-box-align: center;\n        -ms-flex-align: center;\n            align-items: center;\n}\n.p-fileupload-row > div {\n    -webkit-box-flex: 1;\n        -ms-flex: 1 1 auto;\n            flex: 1 1 auto;\n    width: 25%;\n}\n.p-fileupload-row > div:last-child {\n    text-align: right;\n}\n.p-fileupload-content .p-progressbar {\n    width: 100%;\n    position: absolute;\n    top: 0;\n    left: 0;\n}\n.p-button.p-fileupload-choose {\n    position: relative;\n    overflow: hidden;\n}\n.p-button.p-fileupload-choose input[type=file] {\n    display: none;\n}\n.p-fileupload-choose.p-fileupload-choose-selected input[type=file] {\n    display: none;\n}\n.p-fileupload-filename {\n    word-break: break-all;\n}\n.p-fluid .p-fileupload .p-button {\n    width: auto;\n}\n";
     styleInject(css_248z);
 
     script.render = render;

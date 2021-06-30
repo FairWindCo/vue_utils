@@ -113,7 +113,8 @@ def dict_serializer(list_object: Iterable):
 
 
 def standard_value_converter(value: Any, converter: Union[str, callable], ignore_conversion_error: bool = True,
-                             default_convert_to_dict: bool = True, custom_serialized: Callable = None) -> object:
+                             default_convert_to_dict: bool = True, custom_serialized: Callable = None,
+                             value_as_json: bool = False) -> object:
     converted_value = None
     if value is not None and converter:
         try:

@@ -1,13 +1,9 @@
 this.primevue = this.primevue || {};
-this.primevue.terminalservice = (function (mitt) {
+this.primevue.terminalservice = (function (utils) {
 	'use strict';
 
-	function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
-
-	var mitt__default = /*#__PURE__*/_interopDefaultLegacy(mitt);
-
-	const TerminalService = mitt__default['default']();
+	var TerminalService = utils.EventBus();
 
 	return TerminalService;
 
-}(mitt));
+}(primevue.utils));

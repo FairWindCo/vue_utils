@@ -3,6 +3,7 @@ this.primevue.inputmask = (function (utils, vue) {
     'use strict';
 
     var script = {
+        name: 'InputMask',
         emits: ['update:modelValue', 'focus', 'blur', 'keydown', 'complete', 'keypress', 'paste'],
         props: {
             modelValue: null,

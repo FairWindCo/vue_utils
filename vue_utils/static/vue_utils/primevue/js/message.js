@@ -7,6 +7,7 @@ this.primevue.message = (function (Ripple, vue) {
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
+        name: 'Message',
         emits: ['close'],
         props: {
             severity: {

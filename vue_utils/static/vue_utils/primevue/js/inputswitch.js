@@ -3,6 +3,7 @@ this.primevue.inputswitch = (function (vue) {
     'use strict';
 
     var script = {
+        name: 'InputSwitch',
         inheritAttrs: false,
         emits: ['update:modelValue', 'click', 'change'],
         props: {

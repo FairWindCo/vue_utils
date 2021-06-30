@@ -3,6 +3,7 @@ this.primevue.divider = (function (vue) {
     'use strict';
 
     var script = {
+        name: 'Divider',
         props: {
             align: {
                 type: String,
@@ -19,7 +20,7 @@ this.primevue.divider = (function (vue) {
         },
         computed: {
             containerClass() {
-                return ['p-divider p-component', 'p-divider-' + this.layout, 'p-divider-' + this.type, 
+                return ['p-divider p-component', 'p-divider-' + this.layout, 'p-divider-' + this.type,
                     {'p-divider-left': this.layout === 'horizontal' && (!this.align || this.align === 'left')},
                     {'p-divider-center': this.layout === 'horizontal' && this.align === 'center'},
                     {'p-divider-right': this.layout === 'horizontal' && this.align === 'right'},

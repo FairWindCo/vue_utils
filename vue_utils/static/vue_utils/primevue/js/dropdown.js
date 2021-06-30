@@ -1,13 +1,15 @@
 this.primevue = this.primevue || {};
-this.primevue.dropdown = (function (utils, api, Ripple, vue) {
+this.primevue.dropdown = (function (utils, OverlayEventBus, api, Ripple, vue) {
     'use strict';
 
     function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
+    var OverlayEventBus__default = /*#__PURE__*/_interopDefaultLegacy(OverlayEventBus);
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
-        emits: ['update:modelValue', 'before-show', 'before-hide', 'show', 'hide', 'change', 'filter'],
+        name: 'Dropdown',
+        emits: ['update:modelValue', 'before-show', 'before-hide', 'show', 'hide', 'change', 'filter', 'focus', 'blur'],
         props: {
             modelValue: null,
             options: Array,
@@ -41,7 +43,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
             ariaLabelledBy: null,
             appendTo: {
                 type: String,
-                default: null
+                default: 'body'
             },
             emptyFilterMessage: {
                 type: String,
@@ -50,6 +52,15 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
             emptyMessage: {
                 type: String,
                 default: null
+            },
+            panelClass: null,
+            loading: {
+                type: Boolean,
+                default: false
+            },
+            loadingIcon: {
+                type: String,
+                default: 'pi pi-spinner pi-spin'
             }
         },
         data() {
@@ -69,7 +80,6 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
         overlay: null,
         itemsWrapper: null,
         beforeUnmount() {
-            this.restoreAppend();
             this.unbindOutsideClickListener();
             this.unbindResizeListener();
 
@@ -77,8 +87,13 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                 this.scrollHandler.destroy();
                 this.scrollHandler = null;
             }
+
             this.itemsWrapper = null;
-            this.overlay = null;
+
+            if (this.overlay) {
+                utils.ZIndexUtils.clear(this.overlay);
+                this.overlay = null;
+            }
         },
         methods: {
             getOptionLabel(option) {
@@ -118,7 +133,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                     }
                     else {
                         return this.findOptionIndexInList(this.modelValue, this.options);
-                    }                
+                    }
                 }
 
                 return -1;
@@ -143,11 +158,13 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                 this.$emit('before-hide');
                 this.overlayVisible = false;
             },
-            onFocus() {
+            onFocus(event) {
                 this.focused = true;
+                this.$emit('focus', event);
             },
-            onBlur() {
+            onBlur(event) {
                 this.focused = false;
+                this.$emit('blur', event);
             },
             onKeyDown(event) {
                 switch(event.which) {
@@ -274,7 +291,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
 
                     if (option)
                         return option;
-                    else if (groupIndex > 0) 
+                    else if (groupIndex > 0)
                         return this.findPrevOption({group: (groupIndex - 1), option: this.getOptionGroupChildren(this.visibleOptions[groupIndex - 1]).length});
                     else
                         return null;
@@ -299,7 +316,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                 this.updateModel(event, null);
             },
             onClick(event) {
-                if (this.disabled) {
+                if (this.disabled || this.loading) {
                     return;
                 }
 
@@ -327,10 +344,9 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
             onEditableInput(event) {
                 this.$emit('update:modelValue', event.target.value);
             },
-            onOverlayEnter() {
-                this.overlay.style.zIndex = String(utils.DomHandler.generateZIndex());
+            onOverlayEnter(el) {
+                utils.ZIndexUtils.set('overlay', el, this.$primevue.config.zIndex.overlay);
                 this.scrollValueInView();
-                this.appendContainer();
                 this.alignOverlay();
                 this.bindOutsideClickListener();
                 this.bindScrollListener();
@@ -350,12 +366,16 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                 this.itemsWrapper = null;
                 this.overlay = null;
             },
+            onOverlayAfterLeave(el) {
+                utils.ZIndexUtils.clear(el);
+            },
             alignOverlay() {
-                if (this.appendTo) {
-                    utils.DomHandler.absolutePosition(this.overlay, this.$el);
-                    this.overlay.style.minWidth = utils.DomHandler.getOuterWidth(this.$el) + 'px';
-                } else {
+                if (this.appendDisabled) {
                     utils.DomHandler.relativePosition(this.overlay, this.$el);
+                }
+                else {
+                    this.overlay.style.minWidth = utils.DomHandler.getOuterWidth(this.$el) + 'px';
+                    utils.DomHandler.absolutePosition(this.overlay, this.$el);
                 }
             },
             updateModel(event, value) {
@@ -397,7 +417,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
             bindResizeListener() {
                 if (!this.resizeListener) {
                     this.resizeListener = () => {
-                        if (this.overlayVisible) {
+                        if (this.overlayVisible && !utils.DomHandler.isAndroid()) {
                             this.hide();
                         }
                     };
@@ -435,7 +455,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                         this.updateModel(event, this.getOptionValue(newOption));
                     }
                 }
-                
+
                 this.searchTimeout = setTimeout(() => {
                     this.searchValue = null;
                 }, 250);
@@ -490,22 +510,6 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                 let label = this.getOptionLabel(option).toLocaleLowerCase(this.filterLocale);
                 return label.startsWith(this.searchValue.toLocaleLowerCase(this.filterLocale));
             },
-            appendContainer() {
-                if (this.appendTo) {
-                    if (this.appendTo === 'body')
-                        document.body.appendChild(this.overlay);
-                    else
-                        document.getElementById(this.appendTo).appendChild(this.overlay);
-                }
-            },
-            restoreAppend() {
-                if (this.overlay && this.appendTo) {
-                    if (this.appendTo === 'body')
-                        document.body.removeChild(this.overlay);
-                    else
-                        document.getElementById(this.appendTo).removeChild(this.overlay);
-                }
-            },
             onFilterChange(event) {
                 this.$emit('filter', {originalEvent: event, value: event.target.value});
                 if (this.overlayVisible) {
@@ -525,6 +529,12 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                         this.itemsWrapper.scrollTop = selectedItem.offsetTop;
                     }
                 }
+            },
+            onOverlayClick(event) {
+                OverlayEventBus__default['default'].emit('overlay-click', {
+                    originalEvent: event,
+                    target: this.$el
+                });
             }
         },
         computed: {
@@ -535,7 +545,9 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                         for (let optgroup of this.options) {
                             let filteredSubOptions = api.FilterService.filter(this.getOptionGroupChildren(optgroup), this.searchFields, this.filterValue, this.filterMatchMode, this.filterLocale);
                             if (filteredSubOptions && filteredSubOptions.length) {
-                                filteredGroups.push({...optgroup, ...{items: filteredSubOptions}});
+                                let filteredGroup = {...optgroup};
+                                filteredGroup[this.optionGroupChildren] = filteredSubOptions;
+                                filteredGroups.push(filteredGroup);
                             }
                         }
                         return filteredGroups
@@ -569,6 +581,12 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
                     }
                 ];
             },
+            panelStyleClass() {
+                return ['p-dropdown-panel p-component', this.panelClass, {
+                    'p-input-filled': this.$primevue.config.inputStyle === 'filled',
+                    'p-ripple-disabled': this.$primevue.config.ripple === false
+                }];
+            },
             label() {
                 let selectedOption = this.getSelectedOption();
                 if (selectedOption)
@@ -594,6 +612,15 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
             },
             emptyMessageText() {
                 return this.emptyMessage || this.$primevue.config.locale.emptyMessage;
+            },
+            appendDisabled() {
+                return this.appendTo === 'self';
+            },
+            appendTarget() {
+                return this.appendDisabled ? null : this.appendTo;
+            },
+            dropdownIconClass() {
+                return ['p-dropdown-trigger-icon', this.loading ? this.loadingIcon : 'pi pi-chevron-down'];
             }
         },
         directives: {
@@ -602,23 +629,22 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
     };
 
     const _hoisted_1 = { class: "p-hidden-accessible" };
-    const _hoisted_2 = /*#__PURE__*/vue.createVNode("span", { class: "p-dropdown-trigger-icon pi pi-chevron-down" }, null, -1);
-    const _hoisted_3 = {
+    const _hoisted_2 = {
       key: 0,
       class: "p-dropdown-header"
     };
-    const _hoisted_4 = { class: "p-dropdown-filter-container" };
-    const _hoisted_5 = /*#__PURE__*/vue.createVNode("span", { class: "p-dropdown-filter-icon pi pi-search" }, null, -1);
-    const _hoisted_6 = {
+    const _hoisted_3 = { class: "p-dropdown-filter-container" };
+    const _hoisted_4 = /*#__PURE__*/vue.createVNode("span", { class: "p-dropdown-filter-icon pi pi-search" }, null, -1);
+    const _hoisted_5 = {
       class: "p-dropdown-items",
       role: "listbox"
     };
-    const _hoisted_7 = { class: "p-dropdown-item-group" };
-    const _hoisted_8 = {
+    const _hoisted_6 = { class: "p-dropdown-item-group" };
+    const _hoisted_7 = {
       key: 2,
       class: "p-dropdown-empty-message"
     };
-    const _hoisted_9 = {
+    const _hoisted_8 = {
       key: 3,
       class: "p-dropdown-empty-message"
     };
@@ -629,7 +655,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
       return (vue.openBlock(), vue.createBlock("div", {
         ref: "container",
         class: $options.containerClass,
-        onClick: _cache[11] || (_cache[11] = $event => ($options.onClick($event)))
+        onClick: _cache[12] || (_cache[12] = $event => ($options.onClick($event)))
       }, [
         vue.createVNode("div", _hoisted_1, [
           vue.createVNode("input", {
@@ -642,7 +668,7 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
             onBlur: _cache[2] || (_cache[2] = (...args) => ($options.onBlur && $options.onBlur(...args))),
             onKeydown: _cache[3] || (_cache[3] = (...args) => ($options.onKeyDown && $options.onKeyDown(...args))),
             tabindex: $props.tabindex,
-            "aria-haspopup": "listbox",
+            "aria-haspopup": "true",
             "aria-expanded": $data.overlayVisible,
             "aria-labelledby": $props.ariaLabelledBy
           }, null, 40, ["id", "disabled", "tabindex", "aria-expanded", "aria-labelledby"])
@@ -688,126 +714,133 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
           "aria-haspopup": "listbox",
           "aria-expanded": $data.overlayVisible
         }, [
-          _hoisted_2
+          vue.createVNode("span", { class: $options.dropdownIconClass }, null, 2)
         ], 8, ["aria-expanded"]),
-        vue.createVNode(vue.Transition, {
-          name: "p-connected-overlay",
-          onEnter: $options.onOverlayEnter,
-          onLeave: $options.onOverlayLeave
-        }, {
-          default: vue.withCtx(() => [
-            ($data.overlayVisible)
-              ? (vue.openBlock(), vue.createBlock("div", {
-                  key: 0,
-                  ref: $options.overlayRef,
-                  class: "p-dropdown-panel p-component"
-                }, [
-                  vue.renderSlot(_ctx.$slots, "header", {
-                    value: $props.modelValue,
-                    options: $options.visibleOptions
-                  }),
-                  ($props.filter)
-                    ? (vue.openBlock(), vue.createBlock("div", _hoisted_3, [
-                        vue.createVNode("div", _hoisted_4, [
-                          vue.withDirectives(vue.createVNode("input", {
-                            type: "text",
-                            ref: "filterInput",
-                            "onUpdate:modelValue": _cache[8] || (_cache[8] = $event => ($data.filterValue = $event)),
-                            autoComplete: "off",
-                            class: "p-dropdown-filter p-inputtext p-component",
-                            placeholder: $props.filterPlaceholder,
-                            onKeydown: _cache[9] || (_cache[9] = (...args) => ($options.onFilterKeyDown && $options.onFilterKeyDown(...args))),
-                            onInput: _cache[10] || (_cache[10] = (...args) => ($options.onFilterChange && $options.onFilterChange(...args)))
-                          }, null, 40, ["placeholder"]), [
-                            [vue.vModelText, $data.filterValue]
-                          ]),
-                          _hoisted_5
-                        ])
-                      ]))
-                    : vue.createCommentVNode("", true),
-                  vue.createVNode("div", {
-                    ref: $options.itemsWrapperRef,
-                    class: "p-dropdown-items-wrapper",
-                    style: {'max-height': $props.scrollHeight}
+        (vue.openBlock(), vue.createBlock(vue.Teleport, {
+          to: $options.appendTarget,
+          disabled: $options.appendDisabled
+        }, [
+          vue.createVNode(vue.Transition, {
+            name: "p-connected-overlay",
+            onEnter: $options.onOverlayEnter,
+            onLeave: $options.onOverlayLeave,
+            onAfterLeave: $options.onOverlayAfterLeave
+          }, {
+            default: vue.withCtx(() => [
+              ($data.overlayVisible)
+                ? (vue.openBlock(), vue.createBlock("div", {
+                    key: 0,
+                    ref: $options.overlayRef,
+                    class: $options.panelStyleClass,
+                    onClick: _cache[11] || (_cache[11] = (...args) => ($options.onOverlayClick && $options.onOverlayClick(...args)))
                   }, [
-                    vue.createVNode("ul", _hoisted_6, [
-                      (!$props.optionGroupLabel)
-                        ? (vue.openBlock(true), vue.createBlock(vue.Fragment, { key: 0 }, vue.renderList($options.visibleOptions, (option, i) => {
-                            return vue.withDirectives((vue.openBlock(), vue.createBlock("li", {
-                              class: ['p-dropdown-item', {'p-highlight': $options.isSelected(option), 'p-disabled': $options.isOptionDisabled(option)}],
-                              key: $options.getOptionRenderKey(option),
-                              onClick: $event => ($options.onOptionSelect($event, option)),
-                              role: "option",
-                              "aria-label": $options.getOptionLabel(option),
-                              "aria-selected": $options.isSelected(option)
-                            }, [
-                              vue.renderSlot(_ctx.$slots, "option", {
-                                option: option,
-                                index: i
-                              }, () => [
-                                vue.createTextVNode(vue.toDisplayString($options.getOptionLabel(option)), 1)
-                              ])
-                            ], 10, ["onClick", "aria-label", "aria-selected"])), [
-                              [_directive_ripple]
-                            ])
-                          }), 128))
-                        : (vue.openBlock(true), vue.createBlock(vue.Fragment, { key: 1 }, vue.renderList($options.visibleOptions, (optionGroup, i) => {
-                            return (vue.openBlock(), vue.createBlock(vue.Fragment, {
-                              key: $options.getOptionGroupRenderKey(optionGroup)
-                            }, [
-                              vue.createVNode("li", _hoisted_7, [
-                                vue.renderSlot(_ctx.$slots, "optiongroup", {
-                                  option: optionGroup,
+                    vue.renderSlot(_ctx.$slots, "header", {
+                      value: $props.modelValue,
+                      options: $options.visibleOptions
+                    }),
+                    ($props.filter)
+                      ? (vue.openBlock(), vue.createBlock("div", _hoisted_2, [
+                          vue.createVNode("div", _hoisted_3, [
+                            vue.withDirectives(vue.createVNode("input", {
+                              type: "text",
+                              ref: "filterInput",
+                              "onUpdate:modelValue": _cache[8] || (_cache[8] = $event => ($data.filterValue = $event)),
+                              autoComplete: "off",
+                              class: "p-dropdown-filter p-inputtext p-component",
+                              placeholder: $props.filterPlaceholder,
+                              onKeydown: _cache[9] || (_cache[9] = (...args) => ($options.onFilterKeyDown && $options.onFilterKeyDown(...args))),
+                              onInput: _cache[10] || (_cache[10] = (...args) => ($options.onFilterChange && $options.onFilterChange(...args)))
+                            }, null, 40, ["placeholder"]), [
+                              [vue.vModelText, $data.filterValue]
+                            ]),
+                            _hoisted_4
+                          ])
+                        ]))
+                      : vue.createCommentVNode("", true),
+                    vue.createVNode("div", {
+                      ref: $options.itemsWrapperRef,
+                      class: "p-dropdown-items-wrapper",
+                      style: {'max-height': $props.scrollHeight}
+                    }, [
+                      vue.createVNode("ul", _hoisted_5, [
+                        (!$props.optionGroupLabel)
+                          ? (vue.openBlock(true), vue.createBlock(vue.Fragment, { key: 0 }, vue.renderList($options.visibleOptions, (option, i) => {
+                              return vue.withDirectives((vue.openBlock(), vue.createBlock("li", {
+                                class: ['p-dropdown-item', {'p-highlight': $options.isSelected(option), 'p-disabled': $options.isOptionDisabled(option)}],
+                                key: $options.getOptionRenderKey(option),
+                                onClick: $event => ($options.onOptionSelect($event, option)),
+                                role: "option",
+                                "aria-label": $options.getOptionLabel(option),
+                                "aria-selected": $options.isSelected(option)
+                              }, [
+                                vue.renderSlot(_ctx.$slots, "option", {
+                                  option: option,
                                   index: i
                                 }, () => [
-                                  vue.createTextVNode(vue.toDisplayString($options.getOptionGroupLabel(optionGroup)), 1)
+                                  vue.createTextVNode(vue.toDisplayString($options.getOptionLabel(option)), 1)
                                 ])
-                              ]),
-                              (vue.openBlock(true), vue.createBlock(vue.Fragment, null, vue.renderList($options.getOptionGroupChildren(optionGroup), (option, i) => {
-                                return vue.withDirectives((vue.openBlock(), vue.createBlock("li", {
-                                  class: ['p-dropdown-item', {'p-highlight': $options.isSelected(option), 'p-disabled': $options.isOptionDisabled(option)}],
-                                  key: $options.getOptionRenderKey(option),
-                                  onClick: $event => ($options.onOptionSelect($event, option)),
-                                  role: "option",
-                                  "aria-label": $options.getOptionLabel(option),
-                                  "aria-selected": $options.isSelected(option)
-                                }, [
-                                  vue.renderSlot(_ctx.$slots, "option", {
-                                    option: option,
+                              ], 10, ["onClick", "aria-label", "aria-selected"])), [
+                                [_directive_ripple]
+                              ])
+                            }), 128))
+                          : (vue.openBlock(true), vue.createBlock(vue.Fragment, { key: 1 }, vue.renderList($options.visibleOptions, (optionGroup, i) => {
+                              return (vue.openBlock(), vue.createBlock(vue.Fragment, {
+                                key: $options.getOptionGroupRenderKey(optionGroup)
+                              }, [
+                                vue.createVNode("li", _hoisted_6, [
+                                  vue.renderSlot(_ctx.$slots, "optiongroup", {
+                                    option: optionGroup,
                                     index: i
                                   }, () => [
-                                    vue.createTextVNode(vue.toDisplayString($options.getOptionLabel(option)), 1)
+                                    vue.createTextVNode(vue.toDisplayString($options.getOptionGroupLabel(optionGroup)), 1)
                                   ])
-                                ], 10, ["onClick", "aria-label", "aria-selected"])), [
-                                  [_directive_ripple]
-                                ])
-                              }), 128))
-                            ], 64))
-                          }), 128)),
-                      ($data.filterValue && (!$options.visibleOptions || ($options.visibleOptions && $options.visibleOptions.length === 0)))
-                        ? (vue.openBlock(), vue.createBlock("li", _hoisted_8, [
-                            vue.renderSlot(_ctx.$slots, "emptyfilter", {}, () => [
-                              vue.createTextVNode(vue.toDisplayString($options.emptyFilterMessageText), 1)
-                            ])
-                          ]))
-                        : ((!$props.options || ($props.options && $props.options.length === 0)))
-                          ? (vue.openBlock(), vue.createBlock("li", _hoisted_9, [
-                              vue.renderSlot(_ctx.$slots, "empty", {}, () => [
-                                vue.createTextVNode(vue.toDisplayString($options.emptyMessageText), 1)
+                                ]),
+                                (vue.openBlock(true), vue.createBlock(vue.Fragment, null, vue.renderList($options.getOptionGroupChildren(optionGroup), (option, i) => {
+                                  return vue.withDirectives((vue.openBlock(), vue.createBlock("li", {
+                                    class: ['p-dropdown-item', {'p-highlight': $options.isSelected(option), 'p-disabled': $options.isOptionDisabled(option)}],
+                                    key: $options.getOptionRenderKey(option),
+                                    onClick: $event => ($options.onOptionSelect($event, option)),
+                                    role: "option",
+                                    "aria-label": $options.getOptionLabel(option),
+                                    "aria-selected": $options.isSelected(option)
+                                  }, [
+                                    vue.renderSlot(_ctx.$slots, "option", {
+                                      option: option,
+                                      index: i
+                                    }, () => [
+                                      vue.createTextVNode(vue.toDisplayString($options.getOptionLabel(option)), 1)
+                                    ])
+                                  ], 10, ["onClick", "aria-label", "aria-selected"])), [
+                                    [_directive_ripple]
+                                  ])
+                                }), 128))
+                              ], 64))
+                            }), 128)),
+                        ($data.filterValue && (!$options.visibleOptions || ($options.visibleOptions && $options.visibleOptions.length === 0)))
+                          ? (vue.openBlock(), vue.createBlock("li", _hoisted_7, [
+                              vue.renderSlot(_ctx.$slots, "emptyfilter", {}, () => [
+                                vue.createTextVNode(vue.toDisplayString($options.emptyFilterMessageText), 1)
                               ])
                             ]))
-                          : vue.createCommentVNode("", true)
-                    ])
-                  ], 4),
-                  vue.renderSlot(_ctx.$slots, "footer", {
-                    value: $props.modelValue,
-                    options: $options.visibleOptions
-                  })
-                ], 512))
-              : vue.createCommentVNode("", true)
-          ]),
-          _: 1
-        }, 8, ["onEnter", "onLeave"])
+                          : ((!$props.options || ($props.options && $props.options.length === 0)))
+                            ? (vue.openBlock(), vue.createBlock("li", _hoisted_8, [
+                                vue.renderSlot(_ctx.$slots, "empty", {}, () => [
+                                  vue.createTextVNode(vue.toDisplayString($options.emptyMessageText), 1)
+                                ])
+                              ]))
+                            : vue.createCommentVNode("", true)
+                      ])
+                    ], 4),
+                    vue.renderSlot(_ctx.$slots, "footer", {
+                      value: $props.modelValue,
+                      options: $options.visibleOptions
+                    })
+                  ], 2))
+                : vue.createCommentVNode("", true)
+            ]),
+            _: 3
+          }, 8, ["onEnter", "onLeave", "onAfterLeave"])
+        ], 8, ["to", "disabled"]))
       ], 2))
     }
 
@@ -845,4 +878,4 @@ this.primevue.dropdown = (function (utils, api, Ripple, vue) {
 
     return script;
 
-}(primevue.utils, api, primevue.ripple, Vue));
+}(primevue.utils, primevue.overlayeventbus, primevue.api, primevue.ripple, Vue));

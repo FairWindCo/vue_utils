@@ -3,6 +3,7 @@ this.primevue.inlinemessage = (function (vue) {
     'use strict';
 
     var script = {
+        name: 'InlineMessage',
         props: {
             severity: {
                 type: String,

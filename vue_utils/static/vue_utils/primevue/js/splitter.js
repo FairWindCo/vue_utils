@@ -3,8 +3,8 @@ this.primevue.splitter = (function (utils, vue) {
     'use strict';
 
     var script = {
+        name: 'Splitter',
         emits: ['resizeend'],
-        name: 'splitter',
         props: {
             layout: {
                 type: String,
@@ -34,7 +34,7 @@ this.primevue.splitter = (function (utils, vue) {
         nextPanelSize: null,
         prevPanelSize: null,
         panelSizes: null,
-        prevPanelIndex: null, 
+        prevPanelIndex: null,
         mounted() {
             if (this.panels && this.panels.length) {
                 let initialized = false;
@@ -63,7 +63,7 @@ this.primevue.splitter = (function (utils, vue) {
         },
         methods: {
             isSplitterPanel(child) {
-                return child.type.name === 'splitterpanel';
+                return child.type.name === 'SplitterPanel';
             },
             onResizeStart(event, index) {
                 this.gutterElement = event.currentTarget;
@@ -87,7 +87,7 @@ this.primevue.splitter = (function (utils, vue) {
 
                 let newPrevPanelSize = this.prevPanelSize + newPos;
                 let newNextPanelSize = this.nextPanelSize - newPos;
-                
+
                 if (this.validateResize(newPrevPanelSize, newNextPanelSize)) {
                     this.prevPanelElement.style.flexBasis = 'calc(' + newPrevPanelSize + '% - ' + ((this.panels.length - 1) * this.gutterSize) + 'px)';
                     this.nextPanelElement.style.flexBasis = 'calc(' + newNextPanelSize + '% - ' + ((this.panels.length - 1) * this.gutterSize) + 'px)';

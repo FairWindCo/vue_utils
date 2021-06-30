@@ -7,6 +7,7 @@ this.primevue.carousel = (function (utils, Ripple, vue) {
 	var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
 	var script = {
+	    name: 'Carousel',
 		emits: ['update:page'],
 		props: {
 			value: null,
@@ -445,8 +446,7 @@ this.primevue.carousel = (function (utils, Ripple, vue) {
 	    },
 	    directives: {
 	        'ripple': Ripple__default['default']
-	    },
-		name: "Carousel"
+	    }
 	};
 
 	const _hoisted_1 = {
@@ -557,20 +557,25 @@ this.primevue.carousel = (function (utils, Ripple, vue) {
 	          [_directive_ripple]
 	        ])
 	      ], 2),
-	      vue.createVNode("ul", { class: $options.indicatorsContentClasses }, [
-	        (vue.openBlock(true), vue.createBlock(vue.Fragment, null, vue.renderList($options.totalIndicators, (indicator, i) => {
-	          return (vue.openBlock(), vue.createBlock("li", {
-	            key: 'p-carousel-indicator-' + i.toString(),
-	            class: ['p-carousel-indicator', {'p-highlight': $data.d_page === i}]
+	      ($options.totalIndicators >= 0)
+	        ? (vue.openBlock(), vue.createBlock("ul", {
+	            key: 0,
+	            class: $options.indicatorsContentClasses
 	          }, [
-	            vue.createVNode("button", {
-	              class: "p-link",
-	              onClick: $event => ($options.onIndicatorClick($event, i)),
-	              type: "button"
-	            }, null, 8, ["onClick"])
+	            (vue.openBlock(true), vue.createBlock(vue.Fragment, null, vue.renderList($options.totalIndicators, (indicator, i) => {
+	              return (vue.openBlock(), vue.createBlock("li", {
+	                key: 'p-carousel-indicator-' + i.toString(),
+	                class: ['p-carousel-indicator', {'p-highlight': $data.d_page === i}]
+	              }, [
+	                vue.createVNode("button", {
+	                  class: "p-link",
+	                  onClick: $event => ($options.onIndicatorClick($event, i)),
+	                  type: "button"
+	                }, null, 8, ["onClick"])
+	              ], 2))
+	            }), 128))
 	          ], 2))
-	        }), 128))
-	      ], 2)
+	        : vue.createCommentVNode("", true)
 	    ], 2),
 	    (_ctx.$slots.footer)
 	      ? (vue.openBlock(), vue.createBlock("div", _hoisted_2, [

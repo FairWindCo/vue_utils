@@ -8,6 +8,7 @@ this.primevue.splitbutton = (function (Button, Menu, utils, vue) {
     var Menu__default = /*#__PURE__*/_interopDefaultLegacy(Menu);
 
     var script = {
+        name: 'SplitButton',
         inheritAttrs: false,
         props: {
             label: {
@@ -32,14 +33,14 @@ this.primevue.splitbutton = (function (Button, Menu, utils, vue) {
             },
             appendTo: {
                 type: String,
-                default: null
+                default: 'body'
             },
             class: null,
             style: null
         },
         methods: {
             onDropdownButtonClick() {
-                this.$refs.menu.toggle({currentTarget: this.$el, relativeAlign: this.appendTo == null});
+                this.$refs.menu.toggle({currentTarget: this.$el});
             },
             onDefaultButtonClick() {
                 this.$refs.menu.hide();
@@ -59,7 +60,7 @@ this.primevue.splitbutton = (function (Button, Menu, utils, vue) {
         }
     };
 
-    const _withId = /*#__PURE__*/vue.withScopeId("data-v-bf03627a");
+    const _withId = /*#__PURE__*/vue.withScopeId("data-v-76d71c64");
 
     const render = /*#__PURE__*/_withId((_ctx, _cache, $props, $setup, $data, $options) => {
       const _component_PVSButton = vue.resolveComponent("PVSButton");
@@ -125,11 +126,11 @@ this.primevue.splitbutton = (function (Button, Menu, utils, vue) {
       }
     }
 
-    var css_248z = "\n.p-splitbutton[data-v-bf03627a] {\n    display: -webkit-inline-box;\n    display: -ms-inline-flexbox;\n    display: inline-flex;\n    position: relative;\n}\n.p-splitbutton .p-splitbutton-defaultbutton[data-v-bf03627a] {\n    -webkit-box-flex: 1;\n        -ms-flex: 1 1 auto;\n            flex: 1 1 auto;\n    border-top-right-radius: 0;\n    border-bottom-right-radius: 0;\n    border-right: 0 none;\n}\n.p-splitbutton-menubutton[data-v-bf03627a] {\n    display: -webkit-box;\n    display: -ms-flexbox;\n    display: flex;\n    -webkit-box-align: center;\n        -ms-flex-align: center;\n            align-items: center;\n    -webkit-box-pack: center;\n        -ms-flex-pack: center;\n            justify-content: center;\n    border-top-left-radius: 0;\n    border-bottom-left-radius: 0;\n}\n.p-splitbutton .p-menu[data-v-bf03627a] {\n    min-width: 100%;\n}\n.p-fluid .p-splitbutton[data-v-bf03627a]  {\n    display: -webkit-box;\n    display: -ms-flexbox;\n    display: flex;\n}\n";
+    var css_248z = "\n.p-splitbutton[data-v-76d71c64] {\n    display: -webkit-inline-box;\n    display: -ms-inline-flexbox;\n    display: inline-flex;\n    position: relative;\n}\n.p-splitbutton .p-splitbutton-defaultbutton[data-v-76d71c64] {\n    -webkit-box-flex: 1;\n        -ms-flex: 1 1 auto;\n            flex: 1 1 auto;\n    border-top-right-radius: 0;\n    border-bottom-right-radius: 0;\n    border-right: 0 none;\n}\n.p-splitbutton-menubutton[data-v-76d71c64] {\n    display: -webkit-box;\n    display: -ms-flexbox;\n    display: flex;\n    -webkit-box-align: center;\n        -ms-flex-align: center;\n            align-items: center;\n    -webkit-box-pack: center;\n        -ms-flex-pack: center;\n            justify-content: center;\n    border-top-left-radius: 0;\n    border-bottom-left-radius: 0;\n}\n.p-splitbutton .p-menu[data-v-76d71c64] {\n    min-width: 100%;\n}\n.p-fluid .p-splitbutton[data-v-76d71c64]  {\n    display: -webkit-box;\n    display: -ms-flexbox;\n    display: flex;\n}\n";
     styleInject(css_248z);
 
     script.render = render;
-    script.__scopeId = "data-v-bf03627a";
+    script.__scopeId = "data-v-76d71c64";
 
     return script;
 

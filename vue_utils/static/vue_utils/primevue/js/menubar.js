@@ -7,7 +7,7 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
-        name: 'sub-menu',
+        name: 'MenubarSub',
         emits: ['keydown-item', 'leaf-click'],
         props: {
             model: {
@@ -29,6 +29,10 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
             mobileActive: {
                 type: Boolean,
                 default: false
+            },
+            template: {
+                type: Object,
+                default: null
             }
         },
         documentClickListener: null,
@@ -264,7 +268,7 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
 
     function render(_ctx, _cache, $props, $setup, $data, $options) {
       const _component_router_link = vue.resolveComponent("router-link");
-      const _component_sub_menu = vue.resolveComponent("sub-menu");
+      const _component_MenubarSub = vue.resolveComponent("MenubarSub", true);
       const _directive_ripple = vue.resolveDirective("ripple");
 
       return (vue.openBlock(), vue.createBlock("ul", {
@@ -283,64 +287,72 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
                   style: item.style,
                   onMouseenter: $event => ($options.onItemMouseEnter($event, item))
                 }, [
-                  (item.to && !item.disabled)
-                    ? (vue.openBlock(), vue.createBlock(_component_router_link, {
-                        key: 0,
-                        to: item.to,
-                        custom: ""
-                      }, {
-                        default: vue.withCtx(({navigate, href}) => [
-                          vue.withDirectives(vue.createVNode("a", {
-                            href: href,
-                            onClick: $event => ($options.onItemClick($event, item, navigate)),
-                            class: $options.getLinkClass(item),
-                            onKeydown: $event => ($options.onItemKeyDown($event, item)),
-                            role: "menuitem"
-                          }, [
-                            vue.createVNode("span", {
-                              class: ['p-menuitem-icon', item.icon]
-                            }, null, 2),
-                            vue.createVNode("span", _hoisted_1, vue.toDisplayString(item.label), 1)
-                          ], 42, ["href", "onClick", "onKeydown"]), [
-                            [_directive_ripple]
-                          ])
-                        ]),
-                        _: 2
-                      }, 1032, ["to"]))
-                    : vue.withDirectives((vue.openBlock(), vue.createBlock("a", {
-                        key: 1,
-                        href: item.url,
-                        class: $options.getLinkClass(item),
-                        target: item.target,
-                        "aria-haspopup": item.items != null,
-                        "aria-expanded": item === $data.activeItem,
-                        onClick: $event => ($options.onItemClick($event, item)),
-                        onKeydown: $event => ($options.onItemKeyDown($event, item)),
-                        role: "menuitem",
-                        tabindex: item.disabled ? null : '0'
-                      }, [
-                        vue.createVNode("span", {
-                          class: ['p-menuitem-icon', item.icon]
-                        }, null, 2),
-                        vue.createVNode("span", _hoisted_2, vue.toDisplayString(item.label), 1),
-                        (item.items)
-                          ? (vue.openBlock(), vue.createBlock("span", {
+                  (!$props.template)
+                    ? (vue.openBlock(), vue.createBlock(vue.Fragment, { key: 0 }, [
+                        (item.to && !item.disabled)
+                          ? (vue.openBlock(), vue.createBlock(_component_router_link, {
                               key: 0,
-                              class: $options.getSubmenuIcon()
-                            }, null, 2))
-                          : vue.createCommentVNode("", true)
-                      ], 42, ["href", "target", "aria-haspopup", "aria-expanded", "onClick", "onKeydown", "tabindex"])), [
-                        [_directive_ripple]
-                      ]),
+                              to: item.to,
+                              custom: ""
+                            }, {
+                              default: vue.withCtx(({navigate, href}) => [
+                                vue.withDirectives(vue.createVNode("a", {
+                                  href: href,
+                                  onClick: $event => ($options.onItemClick($event, item, navigate)),
+                                  class: $options.getLinkClass(item),
+                                  onKeydown: $event => ($options.onItemKeyDown($event, item)),
+                                  role: "menuitem"
+                                }, [
+                                  vue.createVNode("span", {
+                                    class: ['p-menuitem-icon', item.icon]
+                                  }, null, 2),
+                                  vue.createVNode("span", _hoisted_1, vue.toDisplayString(item.label), 1)
+                                ], 42, ["href", "onClick", "onKeydown"]), [
+                                  [_directive_ripple]
+                                ])
+                              ]),
+                              _: 2
+                            }, 1032, ["to"]))
+                          : vue.withDirectives((vue.openBlock(), vue.createBlock("a", {
+                              key: 1,
+                              href: item.url,
+                              class: $options.getLinkClass(item),
+                              target: item.target,
+                              "aria-haspopup": item.items != null,
+                              "aria-expanded": item === $data.activeItem,
+                              onClick: $event => ($options.onItemClick($event, item)),
+                              onKeydown: $event => ($options.onItemKeyDown($event, item)),
+                              role: "menuitem",
+                              tabindex: item.disabled ? null : '0'
+                            }, [
+                              vue.createVNode("span", {
+                                class: ['p-menuitem-icon', item.icon]
+                              }, null, 2),
+                              vue.createVNode("span", _hoisted_2, vue.toDisplayString(item.label), 1),
+                              (item.items)
+                                ? (vue.openBlock(), vue.createBlock("span", {
+                                    key: 0,
+                                    class: $options.getSubmenuIcon()
+                                  }, null, 2))
+                                : vue.createCommentVNode("", true)
+                            ], 42, ["href", "target", "aria-haspopup", "aria-expanded", "onClick", "onKeydown", "tabindex"])), [
+                              [_directive_ripple]
+                            ])
+                      ], 64))
+                    : (vue.openBlock(), vue.createBlock(vue.resolveDynamicComponent($props.template), {
+                        key: 1,
+                        item: item
+                      }, null, 8, ["item"])),
                   ($options.visible(item) && item.items)
-                    ? (vue.openBlock(), vue.createBlock(_component_sub_menu, {
+                    ? (vue.openBlock(), vue.createBlock(_component_MenubarSub, {
                         model: item.items,
                         key: item.label + '_sub_',
                         mobileActive: $props.mobileActive,
                         onLeafClick: $options.onLeafClick,
                         onKeydownItem: $options.onChildItemKeyDown,
-                        parentActive: item === $data.activeItem
-                      }, null, 8, ["model", "mobileActive", "onLeafClick", "onKeydownItem", "parentActive"]))
+                        parentActive: item === $data.activeItem,
+                        template: $props.template
+                      }, null, 8, ["model", "mobileActive", "onLeafClick", "onKeydownItem", "parentActive", "template"]))
                     : vue.createCommentVNode("", true)
                 ], 46, ["onMouseenter"]))
               : vue.createCommentVNode("", true),
@@ -360,6 +372,7 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
     script.render = render;
 
     var script$1 = {
+        name: 'Menubar',
         props: {
     		model: {
                 type: Array,
@@ -375,11 +388,21 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
         beforeUnmount() {
             this.mobileActive = false;
             this.unbindOutsideClickListener();
+            if (this.$refs.rootmenu && this.$refs.rootmenu.$el) {
+                utils.ZIndexUtils.clear(this.$refs.rootmenu.$el);
+            }
         },
         methods: {
             toggle(event) {
-                this.mobileActive = !this.mobileActive;
-                this.$refs.rootmenu.$el.style.zIndex = String(utils.DomHandler.generateZIndex());
+                if (this.mobileActive) {
+                    this.mobileActive = false;
+                    utils.ZIndexUtils.clear(this.$refs.rootmenu.$el);
+                }
+                else {
+                    this.mobileActive = true;
+                    utils.ZIndexUtils.set('menu', this.$refs.rootmenu.$el, this.$primevue.config.zIndex.menu);
+                }
+
                 this.bindOutsideClickListener();
                 event.preventDefault();
             },
@@ -446,8 +469,9 @@ this.primevue.menubar = (function (utils, Ripple, vue) {
           model: $props.model,
           root: true,
           mobileActive: $data.mobileActive,
-          onLeafClick: $options.onLeafClick
-        }, null, 8, ["model", "mobileActive", "onLeafClick"]),
+          onLeafClick: $options.onLeafClick,
+          template: _ctx.$slots.item
+        }, null, 8, ["model", "mobileActive", "onLeafClick", "template"]),
         (_ctx.$slots.end)
           ? (vue.openBlock(), vue.createBlock("div", _hoisted_3, [
               vue.renderSlot(_ctx.$slots, "end")

@@ -3,6 +3,7 @@ this.primevue.inputtext = (function (vue) {
     'use strict';
 
     var script = {
+        name: 'InputText',
         emits: ['update:modelValue'],
         props: {
             modelValue: null

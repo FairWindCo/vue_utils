@@ -7,6 +7,7 @@ this.primevue.listbox = (function (utils, api, Ripple, vue) {
     var Ripple__default = /*#__PURE__*/_interopDefaultLegacy(Ripple);
 
     var script = {
+        name: 'Listbox',
         emits: ['update:modelValue', 'change', 'filter'],
         props: {
             modelValue: null,
@@ -250,7 +251,7 @@ this.primevue.listbox = (function (utils, api, Ripple, vue) {
                 }
                 else {
                     return this.options;
-                }          
+                }
             },
             equalityKey() {
                 return this.optionValue ? null : this.dataKey;
@@ -436,4 +437,4 @@ this.primevue.listbox = (function (utils, api, Ripple, vue) {
 
     return script;
 
-}(primevue.utils, api, primevue.ripple, Vue));
+}(primevue.utils, primevue.api, primevue.ripple, Vue));

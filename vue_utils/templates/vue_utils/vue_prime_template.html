@@ -43,7 +43,7 @@
                     <script src="{% static 'vue_utils/primevue/js/ripple.min.js' %}"></script>
                     <script src="{% static 'vue_utils/primevue/js/api.min.js' %}"></script>
                     <script src="{% static 'vue_utils/primevue/js/config.min.js' %}"></script>
-                    {% for module in primevue_base|create_default_list:'checkbox,cascadeselect,button,inputtext,inputnumber,inputmask,inputswitch,password,radiobutton,menu,splitbutton,sidebar,dialog,inlinemessage,textarea,calendar,selectbutton,slider,togglebutton,tristatecheckbox,tooltip,message,paginator,fileupload' %}
+                    {% for module in primevue_base|create_default_list:'checkbox,cascadeselect,button,inputtext,inputnumber,inputmask,inputswitch,password,radiobutton,menu,splitbutton,sidebar,dialog,inlinemessage,textarea,calendar,selectbutton,slider,togglebutton,tristatecheckbox,tooltip,message,fileupload' %}
                         {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
                             <script src="{% static vue_script %}"></script>
                         {% endwith %}
@@ -69,9 +69,18 @@
                     {% endfor %}
                 {% endblock %}
             {% endif %}
+            {% if primevue_overlay is None or primevue_overlay %}
+                {% block js_header_primevue_overlay %}
+                    {% for module in primevue_overlay|create_default_list:'dialog,sidebar,tooltip,overlayeventbus,overlaypanel' %}
+                        {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
+                            <script src="{% static vue_script %}"></script>
+                        {% endwith %}
+                    {% endfor %}
+                {% endblock %}
+            {% endif %}
             {% if primevue_listings is None or primevue_listings %}
                 {% block js_header_primevue_listings %}
-                    {% for module in primevue_listings|create_default_list:'listbox,dropdown,multiselect' %}
+                    {% for module in primevue_listings|create_default_list:'listbox,dropdown,multiselect,paginator' %}
                         {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
                             <script src="{% static vue_script %}"></script>
                         {% endwith %}
@@ -89,21 +98,12 @@
             {% endif %}
             {% if primevue_additional is None or primevue_additional %}
                 {% block js_header_primevue_additional %}
-                    {% for module in primevue_datatable|create_default_list:'knob,rating,chip,chips,colorpicker,organizationchart,avatar,badgedirective,blockui,inplace,scrolltop,skeleton,progressbar,progressspinner,tag' %}
+                    {% for module in primevue_additional|create_default_list:'knob,rating,chip,chips,colorpicker,organizationchart,avatar,badgedirective,blockui,inplace,scrolltop,skeleton,progressbar,progressspinner,tag' %}
                         {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
                             <script src="{% static vue_script %}"></script>
                         {% endwith %}
                     {% endfor %}
 
-                {% endblock %}
-            {% endif %}
-            {% if primevue_overlay is None or primevue_overlay %}
-                {% block js_header_primevue_overlay %}
-                    {% for module in primevue_datatable|create_default_list:'dialog,sidebar,tooltip,overlaypanel' %}
-                        {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
-                            <script src="{% static vue_script %}"></script>
-                        {% endwith %}
-                    {% endfor %}
                 {% endblock %}
             {% endif %}
             {% if primevue_media is None or primevue_media %}
@@ -219,10 +219,10 @@
 {% block vue_app_base_config %}
     <script>
         const BASE_APP_COMPONENTS = {
-            {% for module in primevue_base|create_default_list:'checkbox,cascadeselect,button,inputtext,inputnumber,inputmask,inputswitch,password,radiobutton,menu,splitbutton,sidebar,dialog,inlinemessage,textarea,calendar,selectbutton,slider,togglebutton,tristatecheckbox,paginator,tooltip,message,fileupload' %}
+            {% for module in primevue_base|create_default_list:'checkbox,cascadeselect,button,inputtext,inputnumber,inputmask,inputswitch,password,radiobutton,menu,splitbutton,sidebar,dialog,inlinemessage,textarea,calendar,selectbutton,slider,togglebutton,tristatecheckbox,tooltip,message,fileupload' %}
                 'p-{{ module }}': primevue.{{ module }},
             {% endfor %}
-            {% for module in primevue_datatable|create_default_list:'dialog,sidebar,tooltip,overlaypanel' %}
+            {% for module in primevue_overlay|create_default_list:'overlayeventbus, overlaypanel,dialog,sidebar,tooltip' %}
                 'p-{{ module }}': primevue.{{ module }},
             {% endfor %}
             {% for module in primevue_datatable|create_default_list:'knob,rating,chip,chips,colorpicker,organizationchart,avatar,badgedirective,blockui,inplace,scrolltop,skeleton,progressbar,progressspinner,tag' %}
@@ -231,7 +231,7 @@
             {% for module in primevue_panels|create_default_list:'panel,accordion,accordiontab,card,splitter,splitterpanel,tabview,toolbar' %}
                 'p-{{ module }}': primevue.{{ module }},
             {% endfor %}
-            {% for module in primevue_listings|create_default_list:'listbox,dropdown,multiselect' %}
+            {% for module in primevue_listings|create_default_list:'listbox,dropdown,multiselect,paginator' %}
                 'p-{{ module }}': primevue.{{ module }},
             {% endfor %}
             {% for module in primevue_menu|create_default_list:'breadcrumb,contextmenu,megamenu,panelmenu,tabmenu,steps,menubar' %}

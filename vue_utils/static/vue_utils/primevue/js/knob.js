@@ -3,6 +3,7 @@ this.primevue.knob = (function (vue) {
     'use strict';
 
     var script = {
+        name: 'Knob',
         emits: ['update:modelValue', 'change'],
         data() {
             return {

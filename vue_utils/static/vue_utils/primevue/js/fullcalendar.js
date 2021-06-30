@@ -3,6 +3,7 @@ this.primevue.fullcalendar = (function (core, vue) {
     'use strict';
 
     var script = {
+        name: 'FullCalendar',
         props: {
             events: Array,
             options: null
@@ -10,8 +11,10 @@ this.primevue.fullcalendar = (function (core, vue) {
         calendar: null,
         watch: {
             events(value) {
-                this.calendar.removeAllEventSources();
-                this.calendar.addEventSource(value);
+                if (value && this.calendar) {
+                    this.calendar.removeAllEventSources();
+                    this.calendar.addEventSource(value);
+                }
             },
             options(value) {
                 if (value && this.calendar) {
