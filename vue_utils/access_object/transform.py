@@ -88,13 +88,18 @@ def get_field_value(obj: Any, field_name: Union[str, int], default_val: any = No
     return val
 
 
-def get_from_container(container, field_list_with_default_values: List[Tuple[str, any]],
+def get_from_container(container: Union[str, dict, Iterable], field_list_with_default_values: List[Tuple[str, any]],
                        use_container_as_value: bool = False,
-                       ignore_iterable: bool = False):
-    if isinstance(container, str) and use_container_as_value:
-        result = [def_value for field_name, def_value in field_list_with_default_values]
-        result[0] = container
-    elif isinstance(container, Dict):
+                       ignore_iterable: bool = False) -> Iterable:
+    """
+
+    :param ignore_iterable: ignore Iterable containers
+    :param use_container_as_value: - may return container as default value for field
+    :param field_list_with_default_values: list of tuples (field_name,  default value)
+    :type container: is complex structure with fields like dict, or Iterable
+    :rtype: object - return field value from container
+    """
+    if isinstance(container, Dict):
         result = [container.get(field_name, def_value) for field_name, def_value in field_list_with_default_values]
     elif not ignore_iterable and isinstance(container, Iterable):
         result = [def_value for field_name, def_value in field_list_with_default_values]
@@ -108,7 +113,7 @@ def get_from_container(container, field_list_with_default_values: List[Tuple[str
     return result
 
 
-def dict_serializer(list_object: Iterable):
+def dict_serializer(list_object: Iterable, options):
     return [to_dict(obj) for obj in list_object]
 
 

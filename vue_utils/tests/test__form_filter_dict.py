@@ -1,6 +1,6 @@
 import unittest
 
-from vue_utils.utils import form_filter_dict
+from vue_utils.request_processsor.filter_creators import form_filter_dict
 
 
 class request_mok:

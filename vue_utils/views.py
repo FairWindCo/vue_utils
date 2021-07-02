@@ -1,13 +1,12 @@
-from typing import Iterable
-
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.utils.translation import gettext as lang
 # Create your views here.
 from django.views.generic import ListView
 
-from vue_utils.utils import form_filter_dict, get_from_container, get_from_request, \
-    my_serializer
+from vue_utils.request_processsor.filter_creators import compute_filters
+from vue_utils.request_processsor.serialize import my_serializer
+from vue_utils.request_processsor.view import apply_filter_to_query_set, return_result_context
 
 
 def view_test(request):
@@ -19,8 +18,18 @@ class FilterListView(ListView):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.filter_transform_configuration = {}
         self.user_defined_paging = self.paginate_by
         self.user_defined_sort = self.ordering
+        self.last_request = None
+        self.last_combined_filter = None
+        self.last_filter_values = None
+        
+        if self.filters_fields is None and self.model:
+            self.filters_fields = [field_def.name for field_def in self.model._meta.fields]
+            
+        if self.viewed_fields is None and self.model:
+            self.viewed_fields = [field_def.name for field_def in self.model._meta.fields]
 
     # Поля для по для фильтрации с описаниями:
     # Список из:
@@ -37,7 +46,6 @@ class FilterListView(ListView):
     #          преобразователь занчений формы (конвенртор)
     # )
     filters_fields = None
-    last_request = None
     # Метод поиска по умолчанию
     default_filter_action = 'icontains'
     # Дополнительные атрибуты которые передаются в шаблон
@@ -48,6 +56,13 @@ class FilterListView(ListView):
 
     page_row_request_field = 'per_page'
     sort_request_field = 'sort_by'
+    page_request_field = 'page'
+    default_ordering = 'id'
+    # use filter fields like __contains
+    use_extended_filter = False
+    # use complex filter field in request
+    use_combined_filter = 'view_filter'
+    select_all_fields = True
 
     def get_additional_context_attribute(self):
         return {}
@@ -64,32 +79,25 @@ class FilterListView(ListView):
             context.update(**{'filter_form_values': self.filter_form_values})
         return context
 
-    def get_queryset(self):
-        if self.filters_fields is None and self.model:
-            self.filters_fields = [field_def.name for field_def in self.model._meta.fields]
+    def get_queryset(self):                        
         list_objects = super().get_queryset()
 
         if self.last_request and self.filters_fields:
-            filter_def, self.filter_form_values = form_filter_dict(self.last_request, self.filters_fields,
-                                                                   self.default_filter_action)
-            self.paginate_by, _ = get_from_request(self.last_request, self.page_row_request_field,
-                                                   self.user_defined_paging)
-            self.ordering, _ = get_from_request(self.last_request, self.sort_request_field,
-                                                self.user_defined_sort)
-
-            if filter_def:
-                # print(filter_def, self.filter_form_values)
-                list_objects = list_objects.filter(**filter_def)
-            order = self.get_ordering()
-            if order:
-                if isinstance(order, Iterable) and not isinstance(order, str):
-                    list_objects = list_objects.order_by(*order)
-                else:
-                    list_objects = list_objects.order_by(order)
-        if self.viewed_fields:
-            view_field_desc = [get_from_container(field_name, [('field_name', None)], True)[0] for field_name in
-                               self.viewed_fields]
-            list_objects = list_objects.values(*view_field_desc)
+            combined_filter = compute_filters(self.last_request, self.filters_fields,
+                                              use_combined_filter=self.use_combined_filter,
+                                              default_filter_action=self.default_filter_action,
+                                              page_row_request_field=self.page_row_request_field,
+                                              sort_request_field=self.sort_request_field,
+                                              page_request_field=self.page_request_field,
+                                              default_ordering=self.default_ordering,
+                                              use_extended_filter=self.use_extended_filter,                                              
+                                              **self.filter_transform_configuration)
+            self.last_combined_filter = combined_filter
+            list_objects, self.last_filter_values = apply_filter_to_query_set(list_objects, combined_filter,
+                                                                              filters_fields=self.filters_fields,
+                                                                              viewed_fields=self.viewed_fields,
+                                                                              select_all_field=self.select_all_fields,
+                                                                              **self.filter_transform_configuration)
         return list_objects
 
     def get(self, request, *args, **kwargs):
@@ -116,6 +124,9 @@ class FilterAjaxListView(FilterListView):
     serialized_fields = None
     standard_serializer = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def get(self, request, *args, **kwargs):
         self.last_request = request
         self.object_list = self.get_queryset()
@@ -136,46 +147,19 @@ class FilterAjaxListView(FilterListView):
                 })
         serializer = my_serializer
 
-        viewed_fields = None
-
-        if self.viewed_fields is None and self.model:
-            viewed_fields = [field_def.name for field_def in self.model._meta.fields]
-
-        if self.serialized_fields is None:
-            serialized_fields = viewed_fields
-        else:
-            serialized_fields = self.serialized_fields
-
         if self.standard_serializer:
             serializer = self.standard_serializer
         elif hasattr(self.model, 'serializer'):
             serializer = self.model.serializer
 
         page_size = self.get_paginate_by(self.object_list)
+        page_size = self.last_combined_filter.get('per_page', page_size)
+        page = self.last_combined_filter.get('page', 0)
 
-        context = {}
-        if page_size:
-            try:
-                paginator, page, queryset, is_paginated = self.paginate_queryset(self.object_list, page_size)
-                count = self.object_list.count()
-                context['data_count'] = count
-                context['data_list'] = page.object_list
-                context['page_count'] = paginator.num_pages
-                context['page'] = page.number
-            except Http404 as e404:
-                if self.incorrect_page_as_empty_list:
-                    context['data_list'] = []
-                    count = self.object_list.count()
-                    context['data_count'] = count
-                    context['page_count'] = count % int(page_size) + 1
-                    context['page'], _ = get_from_request(request, 'page', 0)
-                else:
-                    raise e404
-        else:
-            context['data_list'] = self.object_list
-
-        if serializer:
-            context['data_list'] = [serializer(data_object, serialized_fields) for data_object in context['data_list']]
+        context = return_result_context(self.object_list,
+                                        page=page, paginate_by=page_size,
+                                        serialize_config=self.serialized_fields, 
+                                        custom_serializer=serializer)
 
         add_context = self.get_additional_context_attribute()
         if add_context:
