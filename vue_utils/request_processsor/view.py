@@ -108,8 +108,8 @@ def user_controlled_view(list_objects, view_dict,
     serializer = default_attribute.get('serializer', my_serializer)
     if view_dict:
         default_attribute.update(view_dict)
-    page = default_attribute.get('page', 1)
-    per_page = default_attribute.get('per_page', 10)
+    page = int(default_attribute.get('page', 1))
+    per_page = int(default_attribute.get('per_page', 10))
     list_objects, _ = operate_query_set(list_objects,
                                         filters_fields=filters_fields,
                                         viewed_fields=viewed_fields,
