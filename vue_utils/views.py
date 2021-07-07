@@ -6,7 +6,7 @@ from django.views.generic import ListView
 
 from vue_utils.request_processsor.filter_creators import compute_filters
 from vue_utils.request_processsor.serialize import my_serializer
-from vue_utils.request_processsor.view import apply_filter_to_query_set, return_result_context
+from vue_utils.request_processsor.view import exec_filter_sort_view_queryset, paging_serialize_queryset
 
 
 def view_test(request):
@@ -21,10 +21,13 @@ class FilterListView(ListView):
         self.filter_transform_configuration = {}
         self.user_defined_paging = self.paginate_by
         self.user_defined_sort = self.ordering
+        # Последний запрос
         self.last_request = None
+        # Последний сформированный фильтр полученный при разборе запроса
         self.last_combined_filter = None
-        self.last_filter_values = None
-        
+        # Значение фильтров полученный при разборе запроса
+        self.filter_form_values = {}
+
         if self.filters_fields is None and self.model:
             self.filters_fields = [field_def.name for field_def in self.model._meta.fields]
             
@@ -47,12 +50,14 @@ class FilterListView(ListView):
     # )
     filters_fields = None
     # Метод поиска по умолчанию
+    # Поля для отображения (список имен)
+    viewed_fields = None
+
     default_filter_action = 'icontains'
     # Дополнительные атрибуты которые передаются в шаблон
     additional_static_attribute = {}
-    filter_form_values = {}
-    # Поля для отображения (список имен)
-    viewed_fields = None
+
+
 
     page_row_request_field = 'per_page'
     sort_request_field = 'sort_by'
@@ -93,11 +98,11 @@ class FilterListView(ListView):
                                               use_extended_filter=self.use_extended_filter,                                              
                                               **self.filter_transform_configuration)
             self.last_combined_filter = combined_filter
-            list_objects, self.last_filter_values = apply_filter_to_query_set(list_objects, combined_filter,
-                                                                              filters_fields=self.filters_fields,
-                                                                              viewed_fields=self.viewed_fields,
-                                                                              select_all_field=self.select_all_fields,
-                                                                              **self.filter_transform_configuration)
+            list_objects, self.filter_form_values = exec_filter_sort_view_queryset(list_objects, combined_filter,
+                                                                                   filters_fields=self.filters_fields,
+                                                                                   viewed_fields=self.viewed_fields,
+                                                                                   select_all_field=self.select_all_fields,
+                                                                                   **self.filter_transform_configuration)
         return list_objects
 
     def get(self, request, *args, **kwargs):
@@ -156,10 +161,10 @@ class FilterAjaxListView(FilterListView):
         page_size = self.last_combined_filter.get('per_page', page_size)
         page = self.last_combined_filter.get('page', 0)
 
-        context = return_result_context(self.object_list,
-                                        page=page, paginate_by=page_size,
-                                        serialize_config=self.serialized_fields, 
-                                        custom_serializer=serializer)
+        context = paging_serialize_queryset(self.object_list,
+                                            page=page, paginate_by=page_size,
+                                            serialize_config=self.serialized_fields,
+                                            custom_serializer=serializer)
 
         add_context = self.get_additional_context_attribute()
         if add_context:
