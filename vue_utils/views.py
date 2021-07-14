@@ -5,8 +5,9 @@ from django.utils.translation import gettext as lang
 from django.views.generic import ListView
 
 from vue_utils.request_processsor.filter_creators import compute_filters
-from vue_utils.request_processsor.serialize import my_serializer
-from vue_utils.request_processsor.view import exec_filter_sort_view_queryset, paging_serialize_queryset
+from vue_utils.request_processsor.paging import paging_queryset
+from vue_utils.request_processsor.serialize import my_serializer, serialize_queryset
+from vue_utils.request_processsor.view import exec_filter_sort_view_queryset
 
 
 def view_test(request):
@@ -25,12 +26,13 @@ class FilterListView(ListView):
         self.last_request = None
         # Последний сформированный фильтр полученный при разборе запроса
         self.last_combined_filter = None
+        self.last_page_info = None
         # Значение фильтров полученный при разборе запроса
         self.filter_form_values = {}
 
         if self.filters_fields is None and self.model:
             self.filters_fields = [field_def.name for field_def in self.model._meta.fields]
-            
+
         if self.viewed_fields is None and self.model:
             self.viewed_fields = [field_def.name for field_def in self.model._meta.fields]
 
@@ -57,8 +59,6 @@ class FilterListView(ListView):
     # Дополнительные атрибуты которые передаются в шаблон
     additional_static_attribute = {}
 
-
-
     page_row_request_field = 'per_page'
     sort_request_field = 'sort_by'
     page_request_field = 'page'
@@ -84,7 +84,7 @@ class FilterListView(ListView):
             context.update(**{'filter_form_values': self.filter_form_values})
         return context
 
-    def get_queryset(self):                        
+    def get_queryset(self):
         list_objects = super().get_queryset()
 
         if self.last_request and self.filters_fields:
@@ -95,7 +95,7 @@ class FilterListView(ListView):
                                               sort_request_field=self.sort_request_field,
                                               page_request_field=self.page_request_field,
                                               default_ordering=self.default_ordering,
-                                              use_extended_filter=self.use_extended_filter,                                              
+                                              use_extended_filter=self.use_extended_filter,
                                               **self.filter_transform_configuration)
             self.last_combined_filter = combined_filter
             list_objects, self.filter_form_values = exec_filter_sort_view_queryset(list_objects, combined_filter,
@@ -103,6 +103,11 @@ class FilterListView(ListView):
                                                                                    viewed_fields=self.viewed_fields,
                                                                                    select_all_field=self.select_all_fields,
                                                                                    **self.filter_transform_configuration)
+            page_size = self.get_paginate_by(list_objects)
+            page_size = self.last_combined_filter.get('per_page', page_size)
+            page = self.last_combined_filter.get('page', 0)
+            list_objects, self.last_page_info = paging_queryset(list_objects, page, page_size)
+
         return list_objects
 
     def get(self, request, *args, **kwargs):
@@ -157,14 +162,8 @@ class FilterAjaxListView(FilterListView):
         elif hasattr(self.model, 'serializer'):
             serializer = self.model.serializer
 
-        page_size = self.get_paginate_by(self.object_list)
-        page_size = self.last_combined_filter.get('per_page', page_size)
-        page = self.last_combined_filter.get('page', 0)
-
-        context = paging_serialize_queryset(self.object_list,
-                                            page=page, paginate_by=page_size,
-                                            serialize_config=self.serialized_fields,
-                                            custom_serializer=serializer)
+        context = serialize_queryset(self.object_list, self.last_page_info, custom_serializer=serializer,
+                                     serialize_config=self.serialized_fields, form_complex_response=True)
 
         add_context = self.get_additional_context_attribute()
         if add_context:

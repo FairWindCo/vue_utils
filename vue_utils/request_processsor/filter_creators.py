@@ -189,7 +189,8 @@ def compute_filters(request, filters_fields,
                     sort_request_field='sort_by',
                     page_request_field='page',
                     default_ordering='id',
-                    use_extended_filter=False, **kwargs):
+                    use_extended_filter=False,
+                    print_filter_info=False, **kwargs):
     combined_filter = None
     if request and filters_fields:
         combined_filter, in_request = get_from_request(request, use_combined_filter, None)
@@ -208,5 +209,6 @@ def compute_filters(request, filters_fields,
                                                         page_request_field=page_request_field,
                                                         default_ordering=default_ordering,
                                                         **kwargs)
-    print(combined_filter)
+    if print_filter_info:
+        print(combined_filter)
     return combined_filter
