@@ -290,6 +290,7 @@ class CrudListView(FilterListView, CrudView):
         else:
             return CrudView.process_post_request(self,request, *args, **kwargs)
 
+
 class FilterAjaxListView(FilterListView):
     # viewed_fields - Поля для по для отображения:
     # Список из:
