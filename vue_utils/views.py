@@ -1,13 +1,13 @@
 import django
-from django.forms import CharField, HiddenInput, Field
-from django.http import Http404, JsonResponse, HttpResponseNotAllowed, HttpResponseBadRequest
+from django.forms import HiddenInput, Field
+from django.http import Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils.translation import gettext as lang
 # Create your views here.
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.views.generic.edit import FormMixin, DeletionMixin, ProcessFormView
-from django.views.generic.detail import SingleObjectTemplateResponseMixin, DetailView, BaseDetailView
 from django.views.generic.base import ContextMixin
+from django.views.generic.detail import SingleObjectTemplateResponseMixin, DetailView
+from django.views.generic.edit import DeletionMixin, ProcessFormView
 from vue_utils.request_processsor.filter_creators import compute_filters
 from vue_utils.request_processsor.paging import paging_queryset
 from vue_utils.request_processsor.serialize import my_serializer, serialize_queryset
@@ -89,8 +89,6 @@ class FilterListView(ListView):
             context.update(**{'filter_form_values': self.filter_form_values})
         return context
 
-       
-
     def get_queryset(self):
         list_objects = super().get_queryset()
 
@@ -105,14 +103,18 @@ class FilterListView(ListView):
                                               use_extended_filter=self.use_extended_filter,
                                               **self.filter_transform_configuration)
             self.last_combined_filter = combined_filter
+            list_field_fr_filters = combined_filter['filter_field_name_list'] \
+                if combined_filter['filter_field_name_list'] else self.filters_fields
             list_objects, self.filter_form_values = exec_filter_sort_view_queryset(list_objects, combined_filter,
-                                                                                   filters_fields=self.filters_fields,
+                                                                                   filters_fields=list_field_fr_filters,
                                                                                    viewed_fields=self.viewed_fields,
                                                                                    select_all_field=self.select_all_fields,
                                                                                    **self.filter_transform_configuration)
-            page_size = self.get_paginate_by(list_objects)
-            page_size = int(self.last_combined_filter.get('per_page', page_size))
-            page = int(self.last_combined_filter.get('page', 0))
+            default_page_size = self.get_paginate_by(list_objects)
+            page_size = self.last_combined_filter.get('per_page', default_page_size)
+            page_size = int(page_size) if page_size else default_page_size
+            default_page = self.last_combined_filter.get('page', 0)
+            page = int(default_page) if default_page else 1
             list_objects, self.last_page_info = paging_queryset(list_objects, page, page_size)
 
         return list_objects
@@ -124,10 +126,10 @@ class FilterListView(ListView):
 
     def paginate_queryset(self, queryset, page_size):
         if self.last_page_info and self.last_page_info['is_paginated']:
-            return  self.last_page_info['paginator'], \
-                    self.last_page_info['page_object'], \
-                    self.last_page_info['page_list'], \
-                    self.last_page_info['is_paginated']
+            return self.last_page_info['paginator'], \
+                   self.last_page_info['page_object'], \
+                   self.last_page_info['page_list'], \
+                   self.last_page_info['is_paginated']
         return super(FilterListView, self).paginate_queryset(queryset, page_size)
 
     def get(self, request, *args, **kwargs):
@@ -188,7 +190,6 @@ class CrudView(CreateView, UpdateView, DeleteView, DetailView):
         else:
             return super().success_url()
 
-
     def get_object(self, queryset=None):
         obj = None
         if self.operation is not None and self.operation != 'create':
@@ -226,9 +227,9 @@ class CrudView(CreateView, UpdateView, DeleteView, DetailView):
             pk, pk_in_request = get_from_request(request, self.pk_url_kwarg, None)
             slug, slug_in_request = get_from_request(request, self.slug_url_kwarg, None)
             if pk_in_request:
-                self.kwargs[self.pk_url_kwarg]=pk
+                self.kwargs[self.pk_url_kwarg] = pk
             if slug_in_request:
-                self.kwargs[self.slug_url_kwarg]=slug
+                self.kwargs[self.slug_url_kwarg] = slug
             if operation == 'create':
                 self.template_name_suffix = self.form_template_name_suffix
             elif operation == 'update':
@@ -282,7 +283,7 @@ class CrudListView(FilterListView, CrudView):
         else:
             self.template_name_suffix = self.list_template_name_suffix
             return FilterListView.get_context_data(self, object_list=object_list, **kwargs)
-        
+
     def get_template_names(self):
         if self.operation is not None:
             return SingleObjectTemplateResponseMixin.get_template_names(self)
@@ -301,7 +302,7 @@ class CrudListView(FilterListView, CrudView):
         if self.operation is None:
             return FilterListView.post(self, request, *args, **kwargs)
         else:
-            return CrudView.process_post_request(self,request, *args, **kwargs)
+            return CrudView.process_post_request(self, request, *args, **kwargs)
 
 
 class FilterAjaxListView(FilterListView):

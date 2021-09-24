@@ -18,7 +18,7 @@ def paging_queryset(query_set: QuerySet, page: int = 0, per_page: int = None, **
         'page_list': query_set,
         'is_paginated': False
     }
-    if query_set:
+    if query_set or isinstance(query_set, QuerySet):
         if page > 0 and per_page:
             if isinstance(query_set, QuerySet) or hasattr(query_set, 'count'):
                 paginate_by = int(per_page) if isinstance(per_page, (int, float)) else 10

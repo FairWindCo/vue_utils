@@ -79,7 +79,8 @@ def form_filters_from_request(request, filter_list,
         'sort_field': ordering,
         'filters': {
 
-        }
+        },
+        'filter_field_name_list':[],
     }
 
     if filter_list:
@@ -103,6 +104,7 @@ def form_filters_from_request(request, filter_list,
                         ('value_as_filter', True),
                         ('filter_null', True),
                     ])
+                form_field_name = form_field_name if form_field_name else current_field
             else:
                 continue
             if use_extended_filter:
@@ -119,7 +121,7 @@ def form_filters_from_request(request, filter_list,
                 else:
                     current_value = value
                 current_value = standard_value_converter(current_value, form_field_converter)
-
+                process['filter_field_name_list'].append(current_field)
                 process['filters'][current_field] = {
                     'value': current_value,
                     'form_field': form_field_name,
