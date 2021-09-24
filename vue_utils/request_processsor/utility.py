@@ -6,7 +6,6 @@ from django.db.models import Manager
 
 from vue_utils.access_object.detect_type import is_dict, is_not_string_sequence
 
-
 DJANGO_OPERATORS = ['__exact', '__iexact', '__contains', '__icontains', '__in', '__gt', '__gte', '__lt',
                     '__lte', '__startswith', '__istartswith', '__endswith', '__iendswith', '__range',
                     '__date', '__yesr', '__iso_year', '__month', '__day', '__week', '__week_day',
@@ -20,6 +19,7 @@ def special_name_part(field_name):
             if field_name.endswith(special_name):
                 return True, field_name[:-len(special_name)]
     return False, field_name
+
 
 def get_extended_filed(request, form_field_name):
     value, exist_in_request = get_from_request(request, form_field_name)
@@ -86,7 +86,7 @@ def get_from_request(request, request_param_name: str, default_value: any = None
                         if raise_exception:
                             raise ValueError(f'No field {request_param_name} in request')
                         else:
-                            return default_value, False                    
+                            return default_value, False
                 if request_param_name in method:
                     value = method.get(request_param_name)
                     if method == 'GET':

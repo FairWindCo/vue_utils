@@ -111,11 +111,24 @@ class FilterListView(ListView):
                                                                                    select_all_field=self.select_all_fields,
                                                                                    **self.filter_transform_configuration)
             page_size = self.get_paginate_by(list_objects)
-            page_size = self.last_combined_filter.get('per_page', page_size)
-            page = self.last_combined_filter.get('page', 0)
+            page_size = int(self.last_combined_filter.get('per_page', page_size))
+            page = int(self.last_combined_filter.get('page', 0))
             list_objects, self.last_page_info = paging_queryset(list_objects, page, page_size)
 
         return list_objects
+
+    def get_paginate_by(self, queryset):
+        if self.last_page_info:
+            return self.last_page_info['per_page']
+        return super(FilterListView, self).get_paginate_by(queryset)
+
+    def paginate_queryset(self, queryset, page_size):
+        if self.last_page_info and self.last_page_info['is_paginated']:
+            return  self.last_page_info['paginator'], \
+                    self.last_page_info['page_object'], \
+                    self.last_page_info['page_list'], \
+                    self.last_page_info['is_paginated']
+        return super(FilterListView, self).paginate_queryset(queryset, page_size)
 
     def get(self, request, *args, **kwargs):
         self.last_request = request
