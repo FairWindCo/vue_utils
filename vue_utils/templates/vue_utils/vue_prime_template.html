@@ -43,7 +43,8 @@
                     <script src="{% static 'vue_utils/primevue/js/ripple.min.js' %}"></script>
                     <script src="{% static 'vue_utils/primevue/js/api.min.js' %}"></script>
                     <script src="{% static 'vue_utils/primevue/js/config.min.js' %}"></script>
-                    {% for module in primevue_base|create_default_list:'checkbox,cascadeselect,button,inputtext,inputnumber,inputmask,inputswitch,password,radiobutton,menu,splitbutton,sidebar,dialog,inlinemessage,textarea,calendar,selectbutton,slider,togglebutton,tristatecheckbox,tooltip,message,fileupload' %}
+                    <script src="{% static 'vue_utils/primevue/js/styleclass.min.js' %}"></script>
+                    {% for module in primevue_base|create_default_list:'checkbox,cascadeselect,button,inputtext,inputnumber,inputmask,inputswitch,password,radiobutton,menu,splitbutton,sidebar,dialog,inlinemessage,textarea,calendar,selectbutton,slider,togglebutton,tristatecheckbox,tooltip,message,fileupload,image' %}
                         {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
                             <script src="{% static vue_script %}"></script>
                         {% endwith %}
@@ -62,7 +63,7 @@
             {% if primevue_panels is None or primevue_panels %}
                 {% block js_header_primevue_panels %}
 
-                    {% for module in primevue_panels|create_default_list:'panel,accordion,accordiontab,card,splitter,splitterpanel,tabview,toolbar' %}
+                    {% for module in primevue_panels|create_default_list:'panel,accordion,accordiontab,card,splitter,splitterpanel,tabview,toolbar,dock' %}
                         {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
                             <script src="{% static vue_script %}"></script>
                         {% endwith %}
@@ -98,7 +99,7 @@
             {% endif %}
             {% if primevue_additional is None or primevue_additional %}
                 {% block js_header_primevue_additional %}
-                    {% for module in primevue_additional|create_default_list:'knob,rating,chip,chips,colorpicker,organizationchart,avatar,badgedirective,blockui,inplace,scrolltop,skeleton,progressbar,progressspinner,tag' %}
+                    {% for module in primevue_additional|create_default_list:'knob,rating,chip,chips,colorpicker,organizationchart,avatar,badgedirective,blockui,inplace,scrolltop,skeleton,progressbar,progressspinner,tag,speeddial,virtualscroller' %}
                         {% with 'vue_utils/primevue/js//'|add:module|add:'.min.js' as vue_script %}
                             <script src="{% static vue_script %}"></script>
                         {% endwith %}

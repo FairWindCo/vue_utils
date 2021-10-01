@@ -1,5 +1,6 @@
 import os
 
+import bs4 as bs4
 import requests
 
 file_list_from_dir = '''
@@ -116,7 +117,7 @@ def fetch_file(url, filename, dst_dir):
         open(os.path.join(dst_dir, filename), 'wb').write(res.content)
 
 
-def fetch_primevue_libjs(version='3.5.1', files_list=(), dst_dir='.'):
+def fetch_primevue_libjs(version='3.7.1', files_list=(), dst_dir='.'):
     if os.path.exists(dst_dir):
         for file_name in files_list:
             fetch_file(f'https://unpkg.com/primevue@{version}/{file_name}/{file_name}.min.js', f'{file_name}.min.js',
@@ -125,7 +126,75 @@ def fetch_primevue_libjs(version='3.5.1', files_list=(), dst_dir='.'):
                        dst_dir)
 
 
+def fetch_file_list(path: str, file_list=None, ignore_ends=('.cjs.js', '.cjs.min.js', '.esm.js', '.esm.min.js')):
+    print(path)
+    res = requests.request('GET', f'https://unpkg.com/{path}')
+    file_list = file_list if file_list is not None else []
+    if res.status_code == 200:
+        soap = bs4.BeautifulSoup(res.text, features="html.parser")
+        table_rows = soap.find_all('tr')
+
+        for row in table_rows:
+            tds = row.find_all('td', class_='css-1iilqp9')
+            if tds:
+                link = tds[0].find('a')
+                if link:
+                    href = link.attrs['href']
+                    if href.endswith('/') and href != '../':
+                        file_list = fetch_file_list(f'{path}{href}', file_list, ignore_ends)
+                    elif href.endswith('.js'):
+                        if any([href.endswith(suffix) for suffix in ignore_ends]):
+                            # print(f'{href} - script ignored')
+                            continue
+                        else:
+                            file_list.append((href, path))
+                    elif href.endswith('.css'):
+                        file_list.append((href, path))
+                    elif href.endswith('.woff'):
+                        file_list.append((href, path))
+                    elif href.endswith('.woff2'):
+                        file_list.append((href, path))
+                    else:
+                        #print(f'{href} - ignored')
+                        continue
+    return file_list
+
+
+def fetch_primevue_libjs2(lin_name='primevue', version='3.7.1', dst_dir='.'):
+    lib_dir = f'{lin_name}_{version}'
+    lib_url = f'{lin_name}@{version}/'
+    path = os.path.join(dst_dir, lib_dir)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    file_safe_path = os.path.join(path, 'js')
+    if not os.path.exists(file_safe_path):
+        os.mkdir(file_safe_path)
+    if os.path.exists(path) and os.path.exists(file_safe_path):
+        file_list = fetch_file_list(lib_url)
+        for name, url in file_list:
+            if name.endswith('.js'):
+                if os.path.exists(file_safe_path):
+                    fetch_file(f'https://unpkg.com/{url}{name}', name, file_safe_path)
+            else:
+                if url.startswith(lib_url):
+                    save_path = url[len(lib_url):]
+                    path_elements = save_path.split('/')
+                    save_path = os.path.join(path, *path_elements)
+                    if not os.path.exists(save_path):
+                        if len(path_elements) == 1:
+                            os.mkdir(save_path)
+                        else:
+                            current_path = path
+                            for path_element in path_elements:
+                                current_path = os.path.join(current_path, path_element)
+                                if not os.path.exists(current_path):
+                                    os.mkdir(current_path)
+                    if os.path.exists(save_path):
+                        fetch_file(f'https://unpkg.com/{url}{name}', name, save_path)
+
+
 if __name__ == '__main__':
-    list_files = _get_file_list(file_list_from_dir)
-    print(list_files)
-    fetch_primevue_libjs(files_list=list_files, dst_dir='./js/')
+    # list_files = _get_file_list(file_list_from_dir)
+    # print(list_files)
+    # fetch_primevue_libjs(files_list=list_files, dst_dir='./js/')
+    fetch_primevue_libjs2()

@@ -355,5 +355,6 @@ class FilterAjaxListView(FilterListView):
             context.update(**add_context)
         if self.additional_static_attribute:
             context.update(**self.additional_static_attribute)
-
+        if 'page_list' in context:
+            del context['page_list']
         return JsonResponse(context)
