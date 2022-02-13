@@ -131,7 +131,7 @@ def form_filters_from_request(request, filter_list,
     return process
 
 
-def translate_operators(operator: str, operator_conversion: dict[str, str] = None) -> (str, bool):
+def translate_operators(operator: str, operator_conversion: Dict[str, str] = None) -> (str, bool):
     if operator_conversion is None:
         operator_conversion = {
             'startsWith': ('istartswith', False),
@@ -175,7 +175,7 @@ def update_filter_def(field_name, filter_def=None, field_value=None, field_opera
 
 
 def preprocess_combined_filter(filter_def):
-    if filter_def and isinstance(filter_def, dict):
+    if filter_def and isinstance(filter_def, Dict):
         for name, new_name in {'sortField': 'sort_field',
                                'multiSortMeta': 'sort_multi',
                                'sortOrder': 'sort_order'}.items():
